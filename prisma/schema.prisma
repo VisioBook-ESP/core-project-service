@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Mock table for user references (will be replaced by Core User Service integration)
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String   @unique
+  role      String   @default("user") // user, premium, admin
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  projects Project[]
+  projectVersions ProjectVersion[]
+
+  @@map("users")
+}
+
+// Main projects table
+model Project {
+  id                   String    @id @default(uuid())
+  userId               String    @map("user_id")
+  title                String    @db.VarChar(255)
+  description          String?   @db.Text
+  status               String    @default("draft") @db.VarChar(50) // draft, active, analyzing, generating, completed, failed, archived
+  visibility           String    @default("private") @db.VarChar(50) // private, public, shared
+  sourceContentId      String?   @map("source_content_id") // Reference to Support Storage Service
+  generatedContentId   String?   @map("generated_content_id") // Reference to Support Storage Service
+  settings             Json      @default("{}")
+  metadata             Json      @default("{}")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deletedAt            DateTime? @map("deleted_at")
+
+  // Relations
+  user             User              @relation(fields: [userId], references: [id])
+  versions         ProjectVersion[]
+  workflows        ProjectWorkflow[]
+
+  @@map("projects")
+}
+
+// Project versions for Git-like versioning
+model ProjectVersion {
+  id            String   @id @default(uuid())
+  projectId     String   @map("project_id")
+  versionNumber Int      @map("version_number")
+  versionName   String?  @map("version_name") @db.VarChar(100)
+  description   String?  @db.Text
+  changes       Json     // JSON object describing the changes
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  project   Project @relation(fields: [projectId], references: [id])
+  createdByUser User @relation(fields: [createdBy], references: [id])
+
+  @@unique([projectId, versionNumber])
+  @@map("project_versions")
+}
+
+// Workflow orchestration tracking
+model ProjectWorkflow {
+  id               String    @id @default(uuid())
+  projectId        String    @map("project_id")
+  workflowType     String    @map("workflow_type") @db.VarChar(100) // content-analysis, scene-extraction, etc.
+  currentStep      String    @map("current_step") @db.VarChar(100)
+  stepsCompleted   Json      @default("[]") @map("steps_completed")
+  stepsRemaining   Json      @default("[]") @map("steps_remaining")
+  progressPercent  Int       @default(0) @map("progress_percent")
+  status           String    @default("running") @db.VarChar(50) // running, completed, failed, paused
+  startedAt        DateTime  @default(now()) @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+  errorMessage     String?   @map("error_message") @db.Text
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@map("project_workflows")
+}
