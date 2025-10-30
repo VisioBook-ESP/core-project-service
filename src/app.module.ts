@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
 import { BullModule } from '@nestjs/bull';
 import { TerminusModule } from '@nestjs/terminus';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -17,12 +16,6 @@ import { PrismaModule } from './prisma/prisma.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-
-    // MongoDB
-    MongooseModule.forRoot(
-      process.env.MONGODB_URL ||
-        'mongodb://localhost:27017/visiobook_core_project',
-    ),
 
     // Bull Queue (Redis)
     BullModule.forRoot({
