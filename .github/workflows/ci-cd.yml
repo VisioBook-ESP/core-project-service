@@ -11,7 +11,7 @@ on:
       - dev
 
 jobs:
-  test:
+  code-quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,13 +22,22 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
       - run: npm run test
       - run: npm run test:e2e
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [code-quality, test]
+    steps:
       - run: npm run build
 
   build-and-push:
     runs-on: ubuntu-latest
-    needs: [test]
+    needs: [code-quality, test, build]
     permissions:
       contents: read
       packages: write
