@@ -55,11 +55,13 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build (PR) or Build+Push (push)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: ${{ github.event_name == 'push' }}
+      - name: Build Docker Image
+        run: |
+          docker build -f Dockerfile -t ghcr.io/visiobook-esp/core-project-service-dev:latest .
+
+      - name: Push Docker Image
+        run: |
+          docker push ghcr.io/visiobook-esp/core-project-service-dev:latest
 
   deploy-dev:
     runs-on: ubuntu-latest
