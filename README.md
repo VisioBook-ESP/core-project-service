@@ -96,3 +96,16 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+
+npm ci
+npx prisma generate
+npm run lint
+npm run test
+npm run test:e2e
+npm run build
+docker build -t core-project-service:test .
+
+docker run --rm -p 8086:8086 core-project-service:test
+
+curl http://localhost:8086/health

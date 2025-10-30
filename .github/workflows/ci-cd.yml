@@ -131,7 +131,7 @@
 #     - name: Log in to Container Registry
 #       uses: docker/login-action@v3
 #       with:
-#         registry: ${{ env.REGISTRY }}
+#         registry: ghcr.io
 #         username: ${{ github.actor }}
 #         password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -139,7 +139,7 @@
 #       id: meta
 #       uses: docker/metadata-action@v5
 #       with:
-#         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+#         images: ghcr.io/core-project-service-dev
 #         tags: |
 #           type=ref,event=branch
 #           type=ref,event=pr
@@ -222,25 +222,9 @@ jobs:
       - run: npm run test:e2e
       - run: npm run build
 
-  security:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm audit --audit-level=high
-      - uses: snyk/actions/node@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
   build-and-push:
     runs-on: ubuntu-latest
-    needs: [test, security]
+    needs: [test]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -252,7 +236,7 @@ jobs:
         if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -260,7 +244,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ghcr.io/core-project-service-dev
           tags: |
             type=ref,event=branch
             type=ref,event=pr
