@@ -48,7 +48,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/core-project-service-dev
+          images: ghcr.io/visiobook-esp/core-project-service-dev
           tags: |
             type=ref,event=branch
             type=ref,event=pr
