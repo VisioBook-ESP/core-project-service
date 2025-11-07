@@ -1,0 +1,62 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/visiobook-esp/core-project-service-dev
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+containerPort: 8086
+
+service:
+  type: ClusterIP
+  port: 8086
+
+env:
+  # Database connections
+  DATABASE_URL: "postgresql://user:password@localhost:5432/visiobook_core_project?schema=public"
+  MONGODB_URL: "mongodb://localhost:27017/visiobook_core_project"
+  REDIS_URL: "redis://localhost:6379"
+
+  # External services
+  USER_SERVICE_URL: "http://localhost:8081"
+  STORAGE_SERVICE_URL: "http://localhost:8089"
+  AI_SERVICE_URL: "http://localhost:8083"
+
+  # Queue configuration
+  QUEUE_REDIS_URL: "redis://localhost:6379"
+  QUEUE_CONCURRENCY: "5"
+  QUEUE_RETRY_ATTEMPTS: "3"
+  QUEUE_RETRY_DELAY: "5000"
+
+  # Workflow settings
+  MAX_WORKFLOW_DURATION: "3600"
+  WORKFLOW_CLEANUP_INTERVAL: "86400"
+  AUTO_SAVE_INTERVAL: "30000"
+
+  # Application
+  NODE_ENV: "development"
+  PORT: "8086"
+
+  # Security (à sécuriser en prod)
+  JWT_SECRET: "your-jwt-secret-change-in-production"
+  ENCRYPTION_KEY: "your-encryption-key-change-in-production"
+
+  # Monitoring
+  LOG_LEVEL: "info"
+
+  # Storage Service Mock
+  STORAGE_SERVICE_MOCK: "true"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+ingress:
+  enabled: false
