@@ -3,11 +3,9 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
       - dev
   pull_request:
     branches:
-      - main
       - dev
 
 jobs:
@@ -57,12 +55,38 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image (prod) from Dockerfile
+      - name: Build and start stack with Docker Compose
         run: |
-          docker build -f Dockerfile -t core-project-service:ci .
+          docker compose up -d --build
+
+      - name: Wait for /health (API + DBs)
+        run: |
+          set -e
+
+          echo "⏳ Attente que l'API réponde sur /health..."
+
+          # On essaie pendant ~60 secondes (30 x 2s)
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8086/health > /dev/null; then
+              echo "✅ /health OK"
+              exit 0
+            fi
+
+            echo "… tentative $i/30, l'application n'est pas encore prête"
+            sleep 2
+          done
+
+          echo "::error::❌ /health n'a pas répondu correctement dans le temps imparti"
+          echo "Logs des conteneurs :"
+          docker compose ps
+          docker compose logs core-project-service || true
+          exit 1
+
+      - name: Stop Docker Compose
+        if: always()
+        run: |
+          docker compose down -v
+
 
   build-and-push:
     runs-on: ubuntu-latest
