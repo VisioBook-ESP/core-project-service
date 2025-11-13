@@ -33,6 +33,7 @@ ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
+RUN apk add --no-cache curl
 
 # Copy the built application
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist

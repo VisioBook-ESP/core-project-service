@@ -1,0 +1,30 @@
+# --- IMAGE DE BASE DEV ---
+FROM node:20-alpine
+
+# Dossier de travail
+WORKDIR /app
+
+# Installer dépendances système utiles pour le dev
+RUN apk add --no-cache openssl bash
+
+# Copier uniquement les fichiers de dépendances
+COPY package.json package-lock.json* ./
+
+# Installer toutes les dépendances (DEV + PROD)
+RUN npm ci
+
+# Copier le reste du code
+COPY . .
+
+# Générer Prisma Client
+RUN npx prisma generate
+
+# Variables internes au conteneur
+ENV NODE_ENV=development
+ENV PORT=8086
+
+# Exposer le port du service NestJS
+EXPOSE 8086
+
+# Lancement en mode watch
+CMD ["npm", "run", "start:dev"]
