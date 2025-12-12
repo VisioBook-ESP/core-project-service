@@ -282,4 +282,4 @@ pnpm-lock.yaml.bak
 *.temp
 
 # Custom ignores
-.Cline/
+.claude/
