@@ -1,0 +1,43 @@
+image:
+  repository: ghcr.io/visiobook/core-project-service
+  tag: ''
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+
+env:
+  NODE_ENV: production
+  PORT: '8086'
+  LOG_LEVEL: info
+
+probes:
+  readiness:
+    path: /health/ready
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness:
+    path: /health/live
+    initialDelaySeconds: 15
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilization: 70
+
+serviceMonitor:
+  enabled: true
+  interval: 30s

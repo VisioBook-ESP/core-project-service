@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Enums ---
+
+enum ProjectStatus {
+  draft
+  active
+  archived
+}
+
+enum SourceType {
+  file
+  scan
+  text
+}
+
+enum VersionStatus {
+  draft
+  analyzing
+  analyzed
+  configuring
+  generating
+  completed
+  failed
+  cancelled
+}
+
+enum ExecutionStatus {
+  pending
+  running
+  completed
+  failed
+  cancelled
+}
+
+enum PipelineStep {
+  analysis
+  scene_extraction
+  character_extraction
+  image_generation
+  audio_generation
+  assembly
+}
+
+enum StepStatus {
+  pending
+  running
+  completed
+  failed
+  skipped
+}
+
+// --- Models ---
+
+model Project {
+  id         String        @id @default(uuid())
+  userId     String
+  title      String
+  status     ProjectStatus @default(draft)
+  sourceType SourceType
+  config     Json          @default("{}")
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  deletedAt  DateTime?
+
+  content    ProjectContent?
+  scenes     Scene[]
+  characters Character[]
+  versions   ProjectVersion[]
+  shareLinks ShareLink[]
+  executions WorkflowExecution[]
+
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model ProjectContent {
+  id        String @id @default(uuid())
+  projectId String @unique
+  text      String
+  wordCount Int
+  summary   String?
+  metadata  Json   @default("{}")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Scene {
+  id                String  @id @default(uuid())
+  projectId         String
+  order             Int
+  text              String
+  description       String
+  imagePrompt       String
+  generatedImageUrl String?
+  duration          Float
+  sentiment         String?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, order])
+  @@index([projectId])
+}
+
+model Character {
+  id          String   @id @default(uuid())
+  projectId   String
+  name        String
+  description String
+  aliases     String[]
+  traits      String[]
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model ProjectVersion {
+  id            String        @id @default(uuid())
+  projectId     String
+  versionNumber Int
+  config        Json          @default("{}")
+  status        VersionStatus @default(draft)
+  videoUrl      String?
+  createdAt     DateTime      @default(now())
+
+  project    Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  executions WorkflowExecution[]
+
+  @@unique([projectId, versionNumber])
+  @@index([projectId])
+}
+
+model WorkflowExecution {
+  id          String          @id @default(uuid())
+  projectId   String
+  versionId   String
+  status      ExecutionStatus @default(pending)
+  currentStep String?
+  progress    Int             @default(0)
+  startedAt   DateTime?
+  completedAt DateTime?
+  error       Json?
+
+  project Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version ProjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  steps   WorkflowStep[]
+
+  @@index([versionId])
+}
+
+model WorkflowStep {
+  id          String       @id @default(uuid())
+  executionId String
+  step        PipelineStep
+  status      StepStatus   @default(pending)
+  progress    Int          @default(0)
+  details     Json?
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  execution WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+}
+
+model ShareLink {
+  id            String    @id @default(uuid())
+  projectId     String
+  shareToken    String    @unique
+  passwordHash  String?
+  expiresAt     DateTime?
+  allowDownload Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
