@@ -1,11 +1,9 @@
 import { z } from 'zod';
 
-const coerceBoolean = z
-  .union([z.boolean(), z.string()])
-  .transform((val) => {
-    if (typeof val === 'boolean') return val;
-    return val === 'true' || val === '1';
-  });
+const coerceBoolean = z.union([z.boolean(), z.string()]).transform((val) => {
+  if (typeof val === 'boolean') return val;
+  return val === 'true' || val === '1';
+});
 
 export const envSchema = z.object({
   // Application

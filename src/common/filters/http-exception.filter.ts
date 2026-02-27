@@ -28,11 +28,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message:
         typeof message === 'string'
           ? message
-          : ((message as Record<string, unknown>).message || message),
-      error:
-        typeof message === 'object'
-          ? (message as Record<string, unknown>).error
-          : undefined,
+          : (message as Record<string, unknown>).message || message,
+      error: typeof message === 'object' ? (message as Record<string, unknown>).error : undefined,
       timestamp: new Date().toISOString(),
       path: request.url,
     };

@@ -74,10 +74,7 @@ describe('GatewayAuthGuard', () => {
 
     guard.canActivate(context);
 
-    expect(spy).toHaveBeenCalledWith(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    expect(spy).toHaveBeenCalledWith(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
   });
 
   it('should accept uppercase UUID', () => {

@@ -1,9 +1,4 @@
-import {
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-  Logger,
-} from '@nestjs/common';
+import { ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { HttpExceptionFilter } from '../../../src/common/filters/http-exception.filter.js';
 
 function createMockHost(url: string = '/test'): {
@@ -53,10 +48,7 @@ describe('HttpExceptionFilter', () => {
 
   it('should handle HttpException with status 500', () => {
     const { host, mockResponse } = createMockHost('/api/error');
-    const exception = new HttpException(
-      'Internal Server Error',
-      HttpStatus.INTERNAL_SERVER_ERROR,
-    );
+    const exception = new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
 
     filter.catch(exception, host);
 
@@ -93,10 +85,7 @@ describe('HttpExceptionFilter', () => {
   it('should log error for 5xx exceptions', () => {
     const { host } = createMockHost();
     const errorSpy = vi.spyOn(Logger.prototype, 'error');
-    const exception = new HttpException(
-      'Internal Server Error',
-      HttpStatus.INTERNAL_SERVER_ERROR,
-    );
+    const exception = new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
 
     filter.catch(exception, host);
 

@@ -20,13 +20,13 @@
 
 ## Agent Profiles
 
-| Profile | ID | Skills & Responsibilities |
-|---------|----|--------------------------|
-| **Backend Dev** | `backend` | NestJS modules, controllers, services, DTOs, guards, pipes, filters, decorators, dependency injection. TypeScript strict mode, Zod schemas, `createZodDto()`, NestJS exception handling, CRUD patterns, ownership enforcement, input sanitization. |
-| **Database Dev** | `database` | Prisma ORM, PostgreSQL, schema design, enums, migrations, `PrismaService` lifecycle, raw SQL (`$queryRaw`), full-text search (tsvector/GIN), indexes, unique constraints, cascade deletes. |
-| **Integration Dev** | `integration` | NATS JetStream (streams, consumers, pub/sub), BullMQ (queues, processors, retries, backoff), XState v5 (state machines, guards, actions, context), HTTP clients (Axios, retry/timeout strategies), SSE (Server-Sent Events), workflow orchestration, event-driven architecture. |
-| **DevOps Dev** | `devops` | Docker multi-stage builds, Helm charts (templates, values, environments), GitHub Actions CI/CD, environment configuration (Zod validation), Pino structured logging, Prometheus metrics (`prom-client`), OpenAPI/Swagger docs, health checks (`@nestjs/terminus`), correlation ID propagation, graceful shutdown. |
-| **Testing Dev** | `testing` | Vitest (globals, projects, coverage), testcontainers (PostgreSQL, Redis, NATS), supertest (HTTP assertions), mocking strategies (Prisma, Redis, NATS, HTTP), unit/integration/E2E test patterns, test helpers and factories. |
+| Profile             | ID            | Skills & Responsibilities                                                                                                                                                                                                                                                                                         |
+| ------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Backend Dev**     | `backend`     | NestJS modules, controllers, services, DTOs, guards, pipes, filters, decorators, dependency injection. TypeScript strict mode, Zod schemas, `createZodDto()`, NestJS exception handling, CRUD patterns, ownership enforcement, input sanitization.                                                                |
+| **Database Dev**    | `database`    | Prisma ORM, PostgreSQL, schema design, enums, migrations, `PrismaService` lifecycle, raw SQL (`$queryRaw`), full-text search (tsvector/GIN), indexes, unique constraints, cascade deletes.                                                                                                                        |
+| **Integration Dev** | `integration` | NATS JetStream (streams, consumers, pub/sub), BullMQ (queues, processors, retries, backoff), XState v5 (state machines, guards, actions, context), HTTP clients (Axios, retry/timeout strategies), SSE (Server-Sent Events), workflow orchestration, event-driven architecture.                                   |
+| **DevOps Dev**      | `devops`      | Docker multi-stage builds, Helm charts (templates, values, environments), GitHub Actions CI/CD, environment configuration (Zod validation), Pino structured logging, Prometheus metrics (`prom-client`), OpenAPI/Swagger docs, health checks (`@nestjs/terminus`), correlation ID propagation, graceful shutdown. |
+| **Testing Dev**     | `testing`     | Vitest (globals, projects, coverage), testcontainers (PostgreSQL, Redis, NATS), supertest (HTTP assertions), mocking strategies (Prisma, Redis, NATS, HTTP), unit/integration/E2E test patterns, test helpers and factories.                                                                                      |
 
 ---
 
@@ -125,7 +125,7 @@ Sequential within agent. No dependency on `backend` agent's output.
   5. **test-integration**: run `pnpm test:integration`. Requires Docker. Depends on `install`.
   6. **test-e2e**: run `pnpm test:e2e`. Requires Docker. Depends on `test-integration`.
   7. **docker-build**: run `docker build .` to verify image builds. Depends on `install`.
-  All jobs: Ubuntu latest runner, timeout 15 minutes.
+     All jobs: Ubuntu latest runner, timeout 15 minutes.
 - [x] **(1.9b)** Create `.github/workflows/release.yml` triggered on push to `dev`:
   1. Build multi-stage Docker image.
   2. Tag with `${{ github.sha }}` and `dev-latest`.
@@ -425,7 +425,7 @@ Sequential: 2.22 → 2.24 → 2.25 → 2.26
 - [ ] **(2.24a)** Create `src/workflow/workflow.controller.ts` with prefix `projects/:projectId/versions/:versionId/workflow`. Endpoints:
   - `POST /start` → `startWorkflow`: return `202` Accepted.
   - `GET /status` → `getWorkflowStatus`: return `200`.
-  Validate route params as UUIDs.
+    Validate route params as UUIDs.
 - [ ] **(2.24b)** Create `src/workflow/dto/workflow-status-response.dto.ts`: Zod schema — `executionId`, `status`, `progress` (0–100), `currentStep`, `steps` (array).
 - [ ] **(2.25)** Create `src/workflow/workflow.module.ts`: declare `WorkflowController`, provide `WorkflowService`, `WorkflowProcessor`. Import `PrismaModule`, `ProjectModule`, `ContentModule`, `VersionModule`, `MessagingModule`, `BullModule.registerQueue({ name: 'project-workflow' })`. Export `WorkflowService`.
   - Import `WorkflowModule` in `src/app.module.ts`.
@@ -722,43 +722,43 @@ Sequential: 3.8 → 3.9 → 3.10
 
 ## Summary
 
-| Phase | Waves | Description | Max Parallel Agents | Profiles Used |
-|-------|-------|-------------|--------------------:|---------------|
-| **Phase 1** | 1–5 | Foundation (scaffolding + P0 infra) | 3 | backend, database, devops, testing |
-| **Phase 2** | 6–11 | Core MVP (CRUD, workflow, messaging) | 3 | backend ×2, integration, testing |
-| **Phase 3** | 12–14 | Extended MVP (search, share, SSE, metrics) | 5 | backend ×2, integration, database, devops, testing ×2 |
-| **Phase 4** | 15–16 | Polish (passwords, cache, sanitization) | 2 | backend, integration, testing |
+| Phase       | Waves | Description                                | Max Parallel Agents | Profiles Used                                         |
+| ----------- | ----- | ------------------------------------------ | ------------------: | ----------------------------------------------------- |
+| **Phase 1** | 1–5   | Foundation (scaffolding + P0 infra)        |                   3 | backend, database, devops, testing                    |
+| **Phase 2** | 6–11  | Core MVP (CRUD, workflow, messaging)       |                   3 | backend ×2, integration, testing                      |
+| **Phase 3** | 12–14 | Extended MVP (search, share, SSE, metrics) |                   5 | backend ×2, integration, database, devops, testing ×2 |
+| **Phase 4** | 15–16 | Polish (passwords, cache, sanitization)    |                   2 | backend, integration, testing                         |
 
 ### Wave Execution Timeline
 
-| Wave | Depends On | Agents | Key Deliverables |
-|------|-----------|-------:|------------------|
-| **1** | — | 2 | tsconfig, eslint, prettier, vitest, .env.example, docker-compose |
-| **2** | Wave 1 | 2 | Zod env config, CI pipeline, Dockerfile, Helm chart |
-| **3** | Wave 2 | 3 | Prisma schema + PrismaModule, auth guard, validation pipe, exception filter, Pino logging |
-| **4** | Wave 3 | 1 | main.ts bootstrap, app.module.ts, health checks |
-| **5** | Wave 4 | 1 | P0 unit tests (config, guard, pipe, filter, health) |
-| **6** | Wave 5 | 2 | Project DTOs, NATS pub/sub, HTTP clients, XState machine, progress calc |
-| **7** | Wave 6 | 2 | ProjectService + Controller + Module, BullMQ processor |
-| **8** | Wave 7 | 2 | Content module (full), Version module (full) |
-| **9** | Wave 8 | 1 | WorkflowService + Controller + Module, NATS handler wiring |
-| **10** | Wave 9 | 1 | P1 unit tests (project, content, version, workflow, messaging, clients) |
-| **11** | Wave 10 | 1 | P1 integration tests (PostgreSQL, Redis, NATS with testcontainers) |
-| **12** | Wave 11 | 5 | Search, summary, scenes, characters, share links, SSE, cancel/retry, notification client, metrics, correlation ID, graceful shutdown, Helm env values |
-| **13** | Wave 12 | 1 | Swagger/OpenAPI documentation for all endpoints |
-| **14** | Wave 13 | 2 | P2 unit tests + E2E tests with testcontainers |
-| **15** | Wave 14 | 2 | Password shares, version compare/revert, Redis cache, sanitization, rate limit headers, status tracking |
-| **16** | Wave 15 | 1 | P3 unit tests |
+| Wave   | Depends On | Agents | Key Deliverables                                                                                                                                      |
+| ------ | ---------- | -----: | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1**  | —          |      2 | tsconfig, eslint, prettier, vitest, .env.example, docker-compose                                                                                      |
+| **2**  | Wave 1     |      2 | Zod env config, CI pipeline, Dockerfile, Helm chart                                                                                                   |
+| **3**  | Wave 2     |      3 | Prisma schema + PrismaModule, auth guard, validation pipe, exception filter, Pino logging                                                             |
+| **4**  | Wave 3     |      1 | main.ts bootstrap, app.module.ts, health checks                                                                                                       |
+| **5**  | Wave 4     |      1 | P0 unit tests (config, guard, pipe, filter, health)                                                                                                   |
+| **6**  | Wave 5     |      2 | Project DTOs, NATS pub/sub, HTTP clients, XState machine, progress calc                                                                               |
+| **7**  | Wave 6     |      2 | ProjectService + Controller + Module, BullMQ processor                                                                                                |
+| **8**  | Wave 7     |      2 | Content module (full), Version module (full)                                                                                                          |
+| **9**  | Wave 8     |      1 | WorkflowService + Controller + Module, NATS handler wiring                                                                                            |
+| **10** | Wave 9     |      1 | P1 unit tests (project, content, version, workflow, messaging, clients)                                                                               |
+| **11** | Wave 10    |      1 | P1 integration tests (PostgreSQL, Redis, NATS with testcontainers)                                                                                    |
+| **12** | Wave 11    |      5 | Search, summary, scenes, characters, share links, SSE, cancel/retry, notification client, metrics, correlation ID, graceful shutdown, Helm env values |
+| **13** | Wave 12    |      1 | Swagger/OpenAPI documentation for all endpoints                                                                                                       |
+| **14** | Wave 13    |      2 | P2 unit tests + E2E tests with testcontainers                                                                                                         |
+| **15** | Wave 14    |      2 | Password shares, version compare/revert, Redis cache, sanitization, rate limit headers, status tracking                                               |
+| **16** | Wave 15    |      1 | P3 unit tests                                                                                                                                         |
 
 ### Task Count
 
-| Phase | Sections | Approx. Tasks |
-|-------|----------|---------------|
-| Phase 1 (Foundation) | 16 | ~65 |
-| Phase 2 (Core MVP) | 15 | ~85 |
-| Phase 3 (Extended MVP) | 17 | ~70 |
-| Phase 4 (Polish) | 11 | ~35 |
-| **Total** | **59** | **~255** |
+| Phase                  | Sections | Approx. Tasks |
+| ---------------------- | -------- | ------------- |
+| Phase 1 (Foundation)   | 16       | ~65           |
+| Phase 2 (Core MVP)     | 15       | ~85           |
+| Phase 3 (Extended MVP) | 17       | ~70           |
+| Phase 4 (Polish)       | 11       | ~35           |
+| **Total**              | **59**   | **~255**      |
 
 ### Critical Path
 
@@ -781,9 +781,9 @@ Wave 1 (tsconfig)
 
 ### File Contention Risks
 
-| File | Touched By | Mitigation |
-|------|-----------|------------|
-| `src/app.module.ts` | Multiple agents adding module imports | Each agent adds its import in dedicated registration tasks (2.4, 2.9, 2.13, 2.25, 3.10). Avoid concurrent edits. |
-| `src/main.ts` | Set up in Wave 4, rarely modified after | Only Wave 4 and minor additions (metrics interceptor in Wave 12). |
-| `src/workflow/workflow.service.ts` | Integration Dev in Waves 9, 12 | Assigned to same agent profile. |
-| `src/workflow/workflow.controller.ts` | Integration Dev in Waves 9, 12 | Assigned to same agent profile. |
+| File                                  | Touched By                              | Mitigation                                                                                                       |
+| ------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `src/app.module.ts`                   | Multiple agents adding module imports   | Each agent adds its import in dedicated registration tasks (2.4, 2.9, 2.13, 2.25, 3.10). Avoid concurrent edits. |
+| `src/main.ts`                         | Set up in Wave 4, rarely modified after | Only Wave 4 and minor additions (metrics interceptor in Wave 12).                                                |
+| `src/workflow/workflow.service.ts`    | Integration Dev in Waves 9, 12          | Assigned to same agent profile.                                                                                  |
+| `src/workflow/workflow.controller.ts` | Integration Dev in Waves 9, 12          | Assigned to same agent profile.                                                                                  |

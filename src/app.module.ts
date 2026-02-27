@@ -18,11 +18,7 @@ import { HealthModule } from './health/health.module.js';
           level: config.LOG_LEVEL,
           autoLogging: true,
           redact: {
-            paths: [
-              'req.headers.authorization',
-              'req.headers.cookie',
-              'res.headers["set-cookie"]',
-            ],
+            paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
             remove: true,
           },
           customProps: () => ({}),
