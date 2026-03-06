@@ -101,9 +101,9 @@ probes:
     failureThreshold: 3
 
 hpa:
-  enabled: true
-  minReplicas: 2
-  maxReplicas: 10
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
   targetCPUUtilization: 70
 
 serviceMonitor:
