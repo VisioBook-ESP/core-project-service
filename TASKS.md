@@ -263,49 +263,49 @@ Sequential: 1.7 → 1.8
 
 #### Agent: `backend` — "project-dtos"
 
-- [ ] **(2.1a)** Create `src/project/dto/create-project.dto.ts`: Zod schema `CreateProjectDto` — `title` (string, min 1, max 200), `sourceType` (enum `file | scan | text`), `config` (JSON, optional, default `{}`), `content` (object with `text` string min 1 and `metadata` JSON optional). Export type via `z.infer`. Register with `createZodDto()`.
-- [ ] **(2.1b)** Create `src/project/dto/update-project.dto.ts`: Zod schema `UpdateProjectDto` — `title` (optional), `config` (optional). All fields optional (partial update). Export type.
-- [ ] **(2.1c)** Create `src/project/dto/project-response.dto.ts`: Zod schema `ProjectResponseDto` — `id`, `userId`, `title`, `status`, `sourceType`, `config`, `createdAt`, `updatedAt`. Export type.
-- [ ] **(2.1d)** Create `src/project/dto/list-projects-query.dto.ts`: Zod schema — `page` (number, default 1, min 1), `pageSize` (number, default 20, min 1, max 100), `sortBy` (enum `createdAt | updatedAt`, default `updatedAt`), `sortOrder` (enum `asc | desc`, default `desc`). Export type.
+- [x] **(2.1a)** Create `src/project/dto/create-project.dto.ts`: Zod schema `CreateProjectDto` — `title` (string, min 1, max 200), `sourceType` (enum `file | scan | text`), `config` (JSON, optional, default `{}`), `content` (object with `text` string min 1 and `metadata` JSON optional). Export type via `z.infer`. Register with `createZodDto()`.
+- [x] **(2.1b)** Create `src/project/dto/update-project.dto.ts`: Zod schema `UpdateProjectDto` — `title` (optional), `config` (optional). All fields optional (partial update). Export type.
+- [x] **(2.1c)** Create `src/project/dto/project-response.dto.ts`: Zod schema `ProjectResponseDto` — `id`, `userId`, `title`, `status`, `sourceType`, `config`, `createdAt`, `updatedAt`. Export type.
+- [x] **(2.1d)** Create `src/project/dto/list-projects-query.dto.ts`: Zod schema — `page` (number, default 1, min 1), `pageSize` (number, default 20, min 1, max 100), `sortBy` (enum `createdAt | updatedAt`, default `updatedAt`), `sortOrder` (enum `asc | desc`, default `desc`). Export type.
 
 #### Agent: `integration` — "nats-clients-xstate"
 
 Sequential chain for NATS (2.14→2.15→2.16→2.17), then independent tasks.
 
-- [ ] **(2.14)** Create `src/messaging/subjects.ts` exporting all NATS subject string constants:
+- [x] **(2.14)** Create `src/messaging/subjects.ts` exporting all NATS subject string constants:
   - **Outbound**: `PROJECT_WORKFLOW_STARTED`, `PROJECT_WORKFLOW_STEP_COMPLETED`, `PROJECT_WORKFLOW_COMPLETED`, `PROJECT_WORKFLOW_FAILED`, `PROJECT_WORKFLOW_CANCELLED`, `PROJECT_DELETED`.
   - **Inbound**: `AI_ANALYSIS_COMPLETED`, `AI_ANALYSIS_FAILED`, `AI_MEDIA_IMAGE_COMPLETED`, `AI_MEDIA_AUDIO_COMPLETED`, `AI_ASSEMBLY_COMPLETED`, `AI_ASSEMBLY_FAILED`, `AI_PROGRESS`.
   - **Stream config**: `STREAM_NAME`, `STREAM_SUBJECTS`, `CONSUMER_NAME`, `CONSUMER_FILTER`.
-- [ ] **(2.15a)** Create `src/messaging/nats.publisher.ts`: injectable `NatsPublisher`. On `onModuleInit()`:
+- [x] **(2.15a)** Create `src/messaging/nats.publisher.ts`: injectable `NatsPublisher`. On `onModuleInit()`:
   1. Connect to NATS using config (`NATS_URL`, optional user/pass).
   2. Obtain JetStream manager.
   3. Ensure stream `VISIOBOOK_PROJECT` exists with config: subjects `['visiobook.project.>']`, retention `LimitsRetention`, storage `FileStorage`, max_bytes `1GB`, max_age `7 days`, discard `DiscardOld`, max_msg_size `1MB`.
   4. Obtain JetStream client for publishing.
-- [ ] **(2.15b)** Implement publish methods: `publishWorkflowStarted`, `publishStepCompleted`, `publishWorkflowCompleted`, `publishWorkflowFailed`, `publishWorkflowCancelled`, `publishProjectDeleted`. Each: publish JSON, await JetStream ack (5s timeout), retry 3 times, log error on exhaustion.
-- [ ] **(2.15c)** Define TypeScript interfaces for each event payload matching §10 field tables.
-- [ ] **(2.16a)** Create `src/messaging/nats.subscriber.ts`: injectable `NatsSubscriber`. On `onModuleInit()`:
+- [x] **(2.15b)** Implement publish methods: `publishWorkflowStarted`, `publishStepCompleted`, `publishWorkflowCompleted`, `publishWorkflowFailed`, `publishWorkflowCancelled`, `publishProjectDeleted`. Each: publish JSON, await JetStream ack (5s timeout), retry 3 times, log error on exhaustion.
+- [x] **(2.15c)** Define TypeScript interfaces for each event payload matching §10 field tables.
+- [x] **(2.16a)** Create `src/messaging/nats.subscriber.ts`: injectable `NatsSubscriber`. On `onModuleInit()`:
   1. Connect to NATS.
   2. Add durable consumer `core-project-service` on stream with config: ack policy `Explicit`, ack wait `30s`, max deliver `5`, filter subject `visiobook.ai.>`.
   3. Start consuming messages.
-- [ ] **(2.16b)** Route messages by subject to handlers: `handleAnalysisCompleted`, `handleAnalysisFailed`, `handleImageCompleted`, `handleAudioCompleted`, `handleAssemblyCompleted`, `handleAssemblyFailed`, `handleProgress`. Each handler: parse JSON, validate fields, `msg.ack()` on success, `msg.nak()` on error. **Stub handler bodies with TODO** — full implementations in Wave 9 (task 2.26).
-- [ ] **(2.16c)** Define TypeScript interfaces for inbound event payloads.
-- [ ] **(2.17)** Create `src/messaging/messaging.module.ts`: provide `NatsPublisher` and `NatsSubscriber`, import config. Implement `onModuleDestroy()` to drain NATS connections. Export both services.
-- [ ] **(2.18)** Create `src/clients/user-service.client.ts`: injectable `UserServiceClient` using `HttpService`. Methods:
+- [x] **(2.16b)** Route messages by subject to handlers: `handleAnalysisCompleted`, `handleAnalysisFailed`, `handleImageCompleted`, `handleAudioCompleted`, `handleAssemblyCompleted`, `handleAssemblyFailed`, `handleProgress`. Each handler: parse JSON, validate fields, `msg.ack()` on success, `msg.nak()` on error. **Stub handler bodies with TODO** — full implementations in Wave 9 (task 2.26).
+- [x] **(2.16c)** Define TypeScript interfaces for inbound event payloads.
+- [x] **(2.17)** Create `src/messaging/messaging.module.ts`: provide `NatsPublisher` and `NatsSubscriber`, import config. Implement `onModuleDestroy()` to drain NATS connections. Export both services.
+- [x] **(2.18)** Create `src/clients/user-service.client.ts`: injectable `UserServiceClient` using `HttpService`. Methods:
   - `checkQuota(userId)`: `GET {USER_SERVICE_URL}/api/v1/users/{userId}/quota`. Timeout 5s, retry 3× exponential backoff (1s, 2s, 4s). Throw `503` on exhaustion.
   - `decrementQuota(userId)`: `POST {USER_SERVICE_URL}/api/v1/users/{userId}/quota/decrement`. Same retry strategy.
   - Include `X-Request-Id` header.
-- [ ] **(2.19)** Create `src/clients/storage-service.client.ts`: injectable `StorageServiceClient`. Methods:
+- [x] **(2.19)** Create `src/clients/storage-service.client.ts`: injectable `StorageServiceClient`. Methods:
   - `getUploadUrl(params)`: `POST .../upload-url`. Timeout 10s, retry 3×. Throw 503.
   - `deleteFile(key)`: `DELETE .../files/{key}`. Same strategy.
   - `getFileMetadata(key)`: `GET .../files/{key}/metadata`. Same strategy.
   - Include `X-Request-Id` header.
-- [ ] **(2.20)** Create `src/workflow/workflow.machine.ts`: XState v5 `createMachine` for project version lifecycle:
+- [x] **(2.20)** Create `src/workflow/workflow.machine.ts`: XState v5 `createMachine` for project version lifecycle:
   - **Context**: `{ projectId, versionId, executionId, hasContent, hasQuota, hasScenes, retryCount, maxRetries }`.
   - **States**: `draft`, `analyzing`, `analyzed`, `generating`, `completed`, `failed`, `cancelled`.
   - **Transitions**: `draft→analyzing` (guards: `hasContent` AND `hasQuota`), `analyzing→analyzed`, `analyzing→failed`, `analyzing→cancelled`, `analyzed→generating` (guard: `hasScenes`), `generating→completed`, `generating→failed`, `generating→cancelled`, `failed→analyzing` (guard: `isRetryAllowed`).
   - **Guards**: `hasContent`, `hasQuota`, `hasScenes`, `isRetryAllowed` (pure functions).
   - Export machine definition, context type, event types.
-- [ ] **(2.23)** Implement weighted progress calculation as a pure utility function (testable in isolation):
+- [x] **(2.23)** Implement weighted progress calculation as a pure utility function (testable in isolation):
   - Step weights: `analysis=15`, `image_generation=40`, `audio_generation=20`, `assembly=25`.
   - `Overall = Σ (step.progress × step.weight) / 100`. For `image_generation`, compute per-scene sub-progress.
   - Handle `scene_extraction` and `character_extraction` as sub-phases of `analysis` (bundled into 15% weight).
@@ -321,32 +321,32 @@ Sequential chain for NATS (2.14→2.15→2.16→2.17), then independent tasks.
 
 Sequential: 2.2 → 2.3 → 2.4 → 2.5
 
-- [ ] **(2.2)** Create `src/project/project.service.ts` with `PrismaService` and `NatsPublisher` injected. Methods:
+- [x] **(2.2)** Create `src/project/project.service.ts` with `PrismaService` and `NatsPublisher` injected. Methods:
   - `create(userId, dto)`: in Prisma transaction, create `Project` + `ProjectContent` (compute wordCount). Return project with content.
   - `findById(projectId, userId)`: query where `id = projectId AND userId AND deletedAt = null`. Throw `NotFoundException` if not found (404, not 403, to prevent enumeration).
   - `findAllByUser(userId, query)`: query with pagination, sort. Return `PaginatedResponse<Project>`.
   - `update(projectId, userId, dto)`: ownership check. Verify no active workflow (latest version status not `analyzing`/`generating` → else `ConflictException` 409). Update fields.
   - `softDelete(projectId, userId)`: ownership check. Set `deletedAt`. Collect storage keys. Publish `visiobook.project.deleted` NATS event.
-- [ ] **(2.3)** Create `src/project/project.controller.ts` with route prefix `projects`. Endpoints:
+- [x] **(2.3)** Create `src/project/project.controller.ts` with route prefix `projects`. Endpoints:
   - `POST /` → `createProject`: return `201`.
   - `GET /` → `listProjects`: return `200` with paginated list.
   - `GET /:id` → `getProject`: return `200`.
   - `PATCH /:id` → `updateProject`: return `200`.
   - `DELETE /:id` → `deleteProject`: return `204`.
-- [ ] **(2.4)** Create `src/project/project.module.ts`: declare `ProjectController`, provide `ProjectService`. Import `PrismaModule`, `MessagingModule`. Export `ProjectService`.
+- [x] **(2.4)** Create `src/project/project.module.ts`: declare `ProjectController`, provide `ProjectService`. Import `PrismaModule`, `MessagingModule`. Export `ProjectService`.
   - Import `ProjectModule` in `src/app.module.ts`.
-- [ ] **(2.5)** Export `ensureOwnership(projectId, userId): Promise<Project>` from `ProjectService` — alias for `findById` making ownership-check intent explicit. Verify no code path leaks ownership info.
+- [x] **(2.5)** Export `ensureOwnership(projectId, userId): Promise<Project>` from `ProjectService` — alias for `findById` making ownership-check intent explicit. Verify no code path leaks ownership info.
 
 #### Agent: `integration` — "bullmq-processor"
 
-- [ ] **(2.21a)** Configure BullMQ in `WorkflowModule` (or `AppModule`): `BullModule.forRoot()` with Redis connection from config. Register queue: `BullModule.registerQueue({ name: 'project-workflow' })`.
-- [ ] **(2.21b)** Create `src/workflow/workflow.processor.ts`: BullMQ `@Processor('project-workflow')` with concurrency from `BULLMQ_CONCURRENCY`. Route by job name:
+- [x] **(2.21a)** Configure BullMQ in `WorkflowModule` (or `AppModule`): `BullModule.forRoot()` with Redis connection from config. Register queue: `BullModule.registerQueue({ name: 'project-workflow' })`.
+- [x] **(2.21b)** Create `src/workflow/workflow.processor.ts`: BullMQ `@Processor('project-workflow')` with concurrency from `BULLMQ_CONCURRENCY`. Route by job name:
   - `workflow:analysis`: update WorkflowStep to `running`, publish NATS event.
   - `workflow:image-generation`: update step, publish NATS events per scene.
   - `workflow:audio-generation`: update step, publish NATS event.
   - `workflow:assembly`: update step, publish NATS event.
   - Per-job defaults: `attempts` = `BULLMQ_MAX_RETRIES`, `backoff` = exponential 1s, `timeout` = 5 min, `stalledInterval` = 30s.
-- [ ] **(2.21c)** Implement `@OnWorkerEvent('failed')` handler: log failure details.
+- [x] **(2.21c)** Implement `@OnWorkerEvent('failed')` handler: log failure details.
 
 ---
 
@@ -358,35 +358,35 @@ Sequential: 2.2 → 2.3 → 2.4 → 2.5
 
 Sequential: 2.6 → 2.7 → 2.8 → 2.9
 
-- [ ] **(2.6a)** Create `src/content/dto/update-content.dto.ts`: Zod schema — `text` (string, min 1, optional), `metadata` (JSON, optional). Export type.
-- [ ] **(2.6b)** Create `src/content/dto/content-response.dto.ts`: Zod schema — `id`, `projectId`, `text`, `wordCount`, `summary`, `metadata`. Export type.
-- [ ] **(2.6c)** Create `src/content/dto/scene-response.dto.ts`: Zod schema — `id`, `projectId`, `order`, `text`, `description`, `imagePrompt`, `generatedImageUrl`, `duration`, `sentiment`. Export type.
-- [ ] **(2.7)** Create `src/content/content.service.ts` with `PrismaService` and `ProjectService` injected. Methods:
+- [x] **(2.6a)** Create `src/content/dto/update-content.dto.ts`: Zod schema — `text` (string, min 1, optional), `metadata` (JSON, optional). Export type.
+- [x] **(2.6b)** Create `src/content/dto/content-response.dto.ts`: Zod schema — `id`, `projectId`, `text`, `wordCount`, `summary`, `metadata`. Export type.
+- [x] **(2.6c)** Create `src/content/dto/scene-response.dto.ts`: Zod schema — `id`, `projectId`, `order`, `text`, `description`, `imagePrompt`, `generatedImageUrl`, `duration`, `sentiment`. Export type.
+- [x] **(2.7)** Create `src/content/content.service.ts` with `PrismaService` and `ProjectService` injected. Methods:
   - `getContent(projectId, userId)`: `ensureOwnership`. Query `ProjectContent`. Throw 404 if none.
   - `updateContent(projectId, userId, dto)`: `ensureOwnership`. Update `ProjectContent`. Recompute `wordCount` if `text` updated.
   - `listScenes(projectId, userId)`: `ensureOwnership`. Return `Scene[]` ordered by `order ASC`.
-- [ ] **(2.8)** Create `src/content/content.controller.ts` with prefix `projects/:projectId/content`. Endpoints:
+- [x] **(2.8)** Create `src/content/content.controller.ts` with prefix `projects/:projectId/content`. Endpoints:
   - `GET /` → `getContent`: return `200`.
   - `PATCH /` → `updateContent`: return `200`.
   - `GET /scenes` → `listScenes`: return `200`.
-- [ ] **(2.9)** Create `src/content/content.module.ts`: declare `ContentController`, provide `ContentService`, import `PrismaModule` and `ProjectModule`. Export `ContentService`.
+- [x] **(2.9)** Create `src/content/content.module.ts`: declare `ContentController`, provide `ContentService`, import `PrismaModule` and `ProjectModule`. Export `ContentService`.
   - Import `ContentModule` in `src/app.module.ts`.
 
 #### Agent: `backend` — "version-module"
 
 Sequential: 2.10 → 2.11 → 2.12 → 2.13
 
-- [ ] **(2.10a)** Create `src/version/dto/create-version.dto.ts`: Zod schema — `config` (JSON, optional — if omitted, snapshots current project config). Export type.
-- [ ] **(2.10b)** Create `src/version/dto/version-response.dto.ts`: Zod schema — `id`, `projectId`, `versionNumber`, `config`, `status`, `videoUrl`, `createdAt`. Optionally includes nested `executions` array. Export type.
-- [ ] **(2.11)** Create `src/version/version.service.ts` with `PrismaService` and `ProjectService`. Methods:
+- [x] **(2.10a)** Create `src/version/dto/create-version.dto.ts`: Zod schema — `config` (JSON, optional — if omitted, snapshots current project config). Export type.
+- [x] **(2.10b)** Create `src/version/dto/version-response.dto.ts`: Zod schema — `id`, `projectId`, `versionNumber`, `config`, `status`, `videoUrl`, `createdAt`. Optionally includes nested `executions` array. Export type.
+- [x] **(2.11)** Create `src/version/version.service.ts` with `PrismaService` and `ProjectService`. Methods:
   - `create(projectId, userId, dto?)`: `ensureOwnership`. Auto-increment `versionNumber`. Snapshot config. Create `ProjectVersion` with status `draft`.
   - `listByProject(projectId, userId)`: `ensureOwnership`. Return versions ordered by `versionNumber DESC`.
   - `findById(projectId, versionId, userId)`: `ensureOwnership`. Include `WorkflowExecution` + `WorkflowStep`. Throw 404 if not found.
-- [ ] **(2.12)** Create `src/version/version.controller.ts` with prefix `projects/:projectId/versions`. Endpoints:
+- [x] **(2.12)** Create `src/version/version.controller.ts` with prefix `projects/:projectId/versions`. Endpoints:
   - `POST /` → `createVersion`: return `201`.
   - `GET /` → `listVersions`: return `200`.
   - `GET /:versionId` → `getVersion`: return `200` with executions + steps.
-- [ ] **(2.13)** Create `src/version/version.module.ts`: declare `VersionController`, provide `VersionService`, import `PrismaModule` and `ProjectModule`. Export `VersionService`.
+- [x] **(2.13)** Create `src/version/version.module.ts`: declare `VersionController`, provide `VersionService`, import `PrismaModule` and `ProjectModule`. Export `VersionService`.
   - Import `VersionModule` in `src/app.module.ts`.
 
 ---
@@ -401,7 +401,7 @@ Sequential: 2.10 → 2.11 → 2.12 → 2.13
 
 Sequential: 2.22 → 2.24 → 2.25 → 2.26
 
-- [ ] **(2.22a)** Create `src/workflow/workflow.service.ts` with dependencies: `PrismaService`, `Queue` (BullMQ), `NatsPublisher`, `UserServiceClient`, `ProjectService`, `ContentService`. Implement:
+- [x] **(2.22a)** Create `src/workflow/workflow.service.ts` with dependencies: `PrismaService`, `Queue` (BullMQ), `NatsPublisher`, `UserServiceClient`, `ProjectService`, `ContentService`. Implement:
   - **`startWorkflow(projectId, versionId, userId)`**:
     1. `ensureOwnership`.
     2. Load `ProjectVersion`, verify status `draft` (or `failed` for retry). Throw `ConflictException` if running.
@@ -422,15 +422,15 @@ Sequential: 2.22 → 2.24 → 2.25 → 2.26
   - **`advanceWorkflow(executionId, completedStep, result)`**: update step to completed, recalculate progress, enqueue next BullMQ job, publish `step_completed`. If no more steps → `completeWorkflow()`.
   - **`failWorkflow(executionId, failedStep, error)`**: update step to failed. If retries exhausted → update execution + version to failed, publish `workflow.failed`.
   - **`completeWorkflow(executionId, videoUrl)`**: set `ProjectVersion.videoUrl` + status `completed`, update execution, decrement quota, publish `workflow.completed`.
-- [ ] **(2.24a)** Create `src/workflow/workflow.controller.ts` with prefix `projects/:projectId/versions/:versionId/workflow`. Endpoints:
+- [x] **(2.24a)** Create `src/workflow/workflow.controller.ts` with prefix `projects/:projectId/versions/:versionId/workflow`. Endpoints:
   - `POST /start` → `startWorkflow`: return `202` Accepted.
   - `GET /status` → `getWorkflowStatus`: return `200`.
     Validate route params as UUIDs.
-- [ ] **(2.24b)** Create `src/workflow/dto/workflow-status-response.dto.ts`: Zod schema — `executionId`, `status`, `progress` (0–100), `currentStep`, `steps` (array).
-- [ ] **(2.25)** Create `src/workflow/workflow.module.ts`: declare `WorkflowController`, provide `WorkflowService`, `WorkflowProcessor`. Import `PrismaModule`, `ProjectModule`, `ContentModule`, `VersionModule`, `MessagingModule`, `BullModule.registerQueue({ name: 'project-workflow' })`. Export `WorkflowService`.
+- [x] **(2.24b)** Create `src/workflow/dto/workflow-status-response.dto.ts`: Zod schema — `executionId`, `status`, `progress` (0–100), `currentStep`, `steps` (array).
+- [x] **(2.25)** Create `src/workflow/workflow.module.ts`: declare `WorkflowController`, provide `WorkflowService`, `WorkflowProcessor`. Import `PrismaModule`, `ProjectModule`, `ContentModule`, `VersionModule`, `MessagingModule`, `BullModule.registerQueue({ name: 'project-workflow' })`. Export `WorkflowService`.
   - Import `WorkflowModule` in `src/app.module.ts`.
   - Configure BullMQ root connection in `AppModule` if not already done.
-- [ ] **(2.26)** Update `src/messaging/nats.subscriber.ts` — implement full handler logic:
+- [x] **(2.26)** Update `src/messaging/nats.subscriber.ts` — implement full handler logic:
   - **`handleAnalysisCompleted(data)`**: in Prisma transaction: bulk-create `Scene` records, bulk-create `Character` records, update `ProjectContent.summary`, update `WorkflowStep` records (analysis + scene_extraction + character_extraction → completed), transition version to `analyzed`, enqueue `workflow:image-generation`.
   - **`handleAnalysisFailed(data)`**: call `workflowService.failWorkflow()`.
   - **`handleImageCompleted(data)`**: update `Scene.generatedImageUrl`, update `WorkflowStep` image_generation progress. If ALL scenes done → advance to `workflow:audio-generation`.
@@ -449,16 +449,16 @@ Sequential: 2.22 → 2.24 → 2.25 → 2.26
 
 #### Agent: `testing` — "p1-unit-tests"
 
-- [ ] **(2.27a)** Create `test/unit/project/project.service.spec.ts`: mock Prisma + NatsPublisher. Tests: `create` (transaction, wordCount), `findById` (correct owner, wrong owner → 404, non-existent → 404), `findAllByUser` (pagination, sort, empty), `update` (fields, conflict when workflow running, non-owner → 404), `softDelete` (sets deletedAt, publishes NATS event, non-owner → 404).
-- [ ] **(2.27b)** Create `test/unit/content/content.service.spec.ts`: mock Prisma + ProjectService. Tests: `getContent` (returns content, 404 when none, calls ensureOwnership), `updateContent` (updates text + recomputes wordCount, updates metadata), `listScenes` (ordered by order ASC, empty array).
-- [ ] **(2.27c)** Create `test/unit/version/version.service.spec.ts`: mock Prisma + ProjectService. Tests: `create` (auto-increment versionNumber, snapshot config), `listByProject` (ordered DESC), `findById` (nested executions + steps, 404).
-- [ ] **(2.27d)** Create `test/unit/workflow/workflow.machine.spec.ts`: test XState machine directly: all valid transitions produce correct next state; `draft→analyzing` blocked when `hasContent=false` or `hasQuota=false`; `analyzed→generating` blocked when `hasScenes=false`; `failed→analyzing` blocked when retries exceeded; invalid transitions don't change state.
-- [ ] **(2.27e)** Create `test/unit/workflow/workflow.service.spec.ts`: mock all deps. Tests: `startWorkflow` (ownership, content, quota, creates execution + steps, enqueues job, publishes event; failure paths: no content 400, no quota 403, not draft 409), `getWorkflowStatus` (weighted progress), `advanceWorkflow` (updates step, recalculates, enqueues next), `failWorkflow` (marks failed, publishes), `completeWorkflow` (sets videoUrl, decrements quota, publishes).
-- [ ] **(2.27f)** Create `test/unit/workflow/workflow.progress.spec.ts`: test progress utility: all 0% → 0%, analysis 100% → 15%, analysis+images 100% → 55%, all 100% → 100%, partial image (3/5 scenes), clamping.
-- [ ] **(2.27g)** Create `test/unit/messaging/nats.publisher.spec.ts`: mock JetStream client. Test each publish method: correct subject, JSON payload, ack awaited, retry on failure, log on exhaustion.
-- [ ] **(2.27h)** Create `test/unit/messaging/nats.subscriber.spec.ts`: mock messages. Test each handler: parsing, ack on success, nak on error, routing by subject.
-- [ ] **(2.27i)** Create `test/unit/clients/user-service.client.spec.ts`: mock `HttpService`. Tests: `checkQuota` (returns response, retries on 500, throws 503 after 3), `decrementQuota` (POST, retries).
-- [ ] **(2.27j)** Create `test/unit/clients/storage-service.client.spec.ts`: mock `HttpService`. Tests: `getUploadUrl`, `deleteFile`, `getFileMetadata` (retries, 503 on exhaustion).
+- [x] **(2.27a)** Create `test/unit/project/project.service.spec.ts`: mock Prisma + NatsPublisher. Tests: `create` (transaction, wordCount), `findById` (correct owner, wrong owner → 404, non-existent → 404), `findAllByUser` (pagination, sort, empty), `update` (fields, conflict when workflow running, non-owner → 404), `softDelete` (sets deletedAt, publishes NATS event, non-owner → 404).
+- [x] **(2.27b)** Create `test/unit/content/content.service.spec.ts`: mock Prisma + ProjectService. Tests: `getContent` (returns content, 404 when none, calls ensureOwnership), `updateContent` (updates text + recomputes wordCount, updates metadata), `listScenes` (ordered by order ASC, empty array).
+- [x] **(2.27c)** Create `test/unit/version/version.service.spec.ts`: mock Prisma + ProjectService. Tests: `create` (auto-increment versionNumber, snapshot config), `listByProject` (ordered DESC), `findById` (nested executions + steps, 404).
+- [x] **(2.27d)** Create `test/unit/workflow/workflow.machine.spec.ts`: test XState machine directly: all valid transitions produce correct next state; `draft→analyzing` blocked when `hasContent=false` or `hasQuota=false`; `analyzed→generating` blocked when `hasScenes=false`; `failed→analyzing` blocked when retries exceeded; invalid transitions don't change state.
+- [x] **(2.27e)** Create `test/unit/workflow/workflow.service.spec.ts`: mock all deps. Tests: `startWorkflow` (ownership, content, quota, creates execution + steps, enqueues job, publishes event; failure paths: no content 400, no quota 403, not draft 409), `getWorkflowStatus` (weighted progress), `advanceWorkflow` (updates step, recalculates, enqueues next), `failWorkflow` (marks failed, publishes), `completeWorkflow` (sets videoUrl, decrements quota, publishes).
+- [x] **(2.27f)** Create `test/unit/workflow/workflow.progress.spec.ts`: test progress utility: all 0% → 0%, analysis 100% → 15%, analysis+images 100% → 55%, all 100% → 100%, partial image (3/5 scenes), clamping.
+- [x] **(2.27g)** Create `test/unit/messaging/nats.publisher.spec.ts`: mock JetStream client. Test each publish method: correct subject, JSON payload, ack awaited, retry on failure, log on exhaustion.
+- [x] **(2.27h)** Create `test/unit/messaging/nats.subscriber.spec.ts`: mock messages. Test each handler: parsing, ack on success, nak on error, routing by subject.
+- [x] **(2.27i)** Create `test/unit/clients/user-service.client.spec.ts`: mock `HttpService`. Tests: `checkQuota` (returns response, retries on 500, throws 503 after 3), `decrementQuota` (POST, retries).
+- [x] **(2.27j)** Create `test/unit/clients/storage-service.client.spec.ts`: mock `HttpService`. Tests: `getUploadUrl`, `deleteFile`, `getFileMetadata` (retries, 503 on exhaustion).
 
 ---
 
@@ -468,10 +468,10 @@ Sequential: 2.22 → 2.24 → 2.25 → 2.26
 
 #### Agent: `testing` — "p1-integration-tests"
 
-- [ ] **(2.28a)** Create `test/integration/setup.ts`: testcontainers setup — start PostgreSQL 16, Redis 7, NATS 2.10. Apply Prisma migrations. Export connection URLs and Prisma client. Teardown in `afterAll`.
-- [ ] **(2.28b)** Create `test/integration/project/project.service.integration.spec.ts`: test against real PostgreSQL: CRUD persists correctly, userId index, soft-delete behavior, unique constraints, cascade delete.
-- [ ] **(2.28c)** Create `test/integration/workflow/workflow.processor.integration.spec.ts`: test against real Redis: job pickup, retry on failure, timeout/stall detection, exponential backoff.
-- [ ] **(2.28d)** Create `test/integration/messaging/nats.integration.spec.ts`: test against real NATS: publish→subscribe, JetStream ack/nak, durable consumer reconnect, max deliver behavior.
+- [x] **(2.28a)** Create `test/integration/setup.ts`: testcontainers setup — start PostgreSQL 16, Redis 7, NATS 2.10. Apply Prisma migrations. Export connection URLs and Prisma client. Teardown in `afterAll`.
+- [x] **(2.28b)** Create `test/integration/project/project.service.integration.spec.ts`: test against real PostgreSQL: CRUD persists correctly, userId index, soft-delete behavior, unique constraints, cascade delete.
+- [x] **(2.28c)** Create `test/integration/workflow/workflow.processor.integration.spec.ts`: test against real Redis: job pickup, retry on failure, timeout/stall detection, exponential backoff.
+- [x] **(2.28d)** Create `test/integration/messaging/nats.integration.spec.ts`: test against real NATS: publish→subscribe, JetStream ack/nak, durable consumer reconnect, max deliver behavior.
 
 ---
 
