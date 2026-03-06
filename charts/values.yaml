@@ -17,6 +17,7 @@ minReadySeconds: 10
 terminationGracePeriodSeconds: 10
 
 existingSecret: ""
+existingSecretPgcrud: ""
 
 service:
   type: ClusterIP
