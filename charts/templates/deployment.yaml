@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "core-project-service.fullname" . }}
+  annotations:
+    argocd.argoproj.io/sync-wave: {{ .Values.syncWave | default "0" | quote }}
   labels:
     app: {{ include "core-project-service.name" . }}
     version: {{ .Values.image.tag | quote }}

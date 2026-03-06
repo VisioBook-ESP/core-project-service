@@ -3,6 +3,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "resolvePackageJsonExports": true,
+    "rewriteRelativeImportExtensions": true,
     "target": "ES2023",
     "strict": true,
     "esModuleInterop": true,

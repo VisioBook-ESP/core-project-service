@@ -16,6 +16,8 @@ progressDeadlineSeconds: 60
 minReadySeconds: 10
 terminationGracePeriodSeconds: 10
 
+syncWave: "0"
+
 existingSecret: ""
 existingSecretPgcrud: ""
 
