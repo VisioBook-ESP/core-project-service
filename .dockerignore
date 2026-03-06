@@ -11,4 +11,5 @@ helm
 .vscode
 .idea
 docs-architecture
+src/generated
 .claude
