@@ -1,31 +1,52 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ include "core-project-service.fullname" . }}
   labels:
-    app: {{ .Chart.Name }}
+    app: {{ include "core-project-service.name" . }}
+    version: {{ .Values.image.tag | quote }}
+    {{- with .Values.podLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default 2 }}
+  progressDeadlineSeconds: {{ .Values.progressDeadlineSeconds | default 300 }}
+  minReadySeconds: {{ .Values.minReadySeconds | default 0 }}
+  strategy:
+    type: {{ .Values.strategy.type }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable | default 0 }}
+      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge | default 1 }}
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}
+      app: {{ include "core-project-service.name" . }}
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
+        app: {{ include "core-project-service.name" . }}
+        version: {{ .Values.image.tag | quote }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/chart: {{ print (toYaml .Values) (.Files.Glob "**" | toString) | sha256sum | quote }}
+        sidecar.istio.io/inject: "{{ .Values.istio.injection }}"
     spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 30 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 8086
+            - name: http
+              containerPort: 8086
               protocol: TCP
-          envFrom:
-            - configMapRef:
-                name: {{ .Chart.Name }}-config
-            - secretRef:
-                name: {{ .Chart.Name }}-secret
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
           readinessProbe:
             httpGet:
               path: {{ .Values.probes.readiness.path }}
@@ -42,10 +63,19 @@ spec:
             periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
             failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          {{- with .Values.resources }}
           resources:
-            requests:
-              cpu: {{ .Values.resources.requests.cpu }}
-              memory: {{ .Values.resources.requests.memory }}
-            limits:
-              cpu: {{ .Values.resources.limits.cpu }}
-              memory: {{ .Values.resources.limits.memory }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

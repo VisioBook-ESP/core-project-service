@@ -1,9 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Chart.Name }}-config
+  name: {{ include "core-project-service.fullname" . }}-config
+  labels:
+    {{- include "core-project-service.labels" . | nindent 4 }}
 data:
-  NODE_ENV: {{ .Values.env.NODE_ENV | quote }}
-  PORT: {{ .Values.env.PORT | default "8086" | quote }}
-  LOG_LEVEL: {{ .Values.env.LOG_LEVEL | default "info" | quote }}
-  SWAGGER_ENABLED: {{ .Values.env.SWAGGER_ENABLED | default "false" | quote }}
+  {{- range $key, $value := .Values.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
