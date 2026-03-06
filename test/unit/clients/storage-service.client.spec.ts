@@ -15,7 +15,6 @@ function createClient() {
 }
 
 describe('StorageServiceClient', () => {
-
   describe('getUploadUrl', () => {
     it('should return upload URL result on success', async () => {
       const { client, mockHttpService } = createClient();

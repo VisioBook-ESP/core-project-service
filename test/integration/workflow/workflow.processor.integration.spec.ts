@@ -30,11 +30,9 @@ describe('BullMQ workflow queue (integration)', () => {
   it('should add a job and have a worker process it', async () => {
     const queueName = `${WORKFLOW_QUEUE_NAME}-test-1`;
     const queue = new Queue(queueName, { connection: redisConnection() });
-    const worker = new Worker(
-      queueName,
-      async (job: Job) => job.data,
-      { connection: redisConnection() },
-    );
+    const worker = new Worker(queueName, async (job: Job) => job.data, {
+      connection: redisConnection(),
+    });
 
     try {
       const jobData = {
@@ -64,11 +62,9 @@ describe('BullMQ workflow queue (integration)', () => {
   it('should preserve job data fields correctly', async () => {
     const queueName = `${WORKFLOW_QUEUE_NAME}-test-2`;
     const queue = new Queue(queueName, { connection: redisConnection() });
-    const worker = new Worker(
-      queueName,
-      async (job: Job) => job.data,
-      { connection: redisConnection() },
-    );
+    const worker = new Worker(queueName, async (job: Job) => job.data, {
+      connection: redisConnection(),
+    });
 
     try {
       const jobData = {
@@ -134,14 +130,10 @@ describe('BullMQ workflow queue (integration)', () => {
   it('should move completed jobs to the completed set', async () => {
     const queueName = `${WORKFLOW_QUEUE_NAME}-test-4`;
     const queue = new Queue(queueName, { connection: redisConnection() });
-    const worker = new Worker(
-      queueName,
-      async () => ({ done: true }),
-      {
-        connection: redisConnection(),
-        removeOnComplete: { count: 100 },
-      },
-    );
+    const worker = new Worker(queueName, async () => ({ done: true }), {
+      connection: redisConnection(),
+      removeOnComplete: { count: 100 },
+    });
 
     try {
       const completedPromise = new Promise<void>((resolve) => {

@@ -41,9 +41,13 @@ export class StorageServiceClient {
   async getUploadUrl(params: UploadUrlParams, requestId?: string): Promise<UploadUrlResult> {
     return this.withRetry<UploadUrlResult>(async () => {
       const { data } = await firstValueFrom(
-        this.httpService.post<UploadUrlResult>(`${this.baseUrl}/api/v1/storage/upload-url`, params, {
-          headers: this.buildHeaders(requestId),
-        }),
+        this.httpService.post<UploadUrlResult>(
+          `${this.baseUrl}/api/v1/storage/upload-url`,
+          params,
+          {
+            headers: this.buildHeaders(requestId),
+          },
+        ),
       );
       return data;
     }, 'getUploadUrl');

@@ -51,7 +51,14 @@ function createMocks() {
     mockQueue as never,
   );
 
-  return { service, mockPrisma, mockNatsPublisher, mockProjectService, mockUserServiceClient, mockQueue };
+  return {
+    service,
+    mockPrisma,
+    mockNatsPublisher,
+    mockProjectService,
+    mockUserServiceClient,
+    mockQueue,
+  };
 }
 
 describe('WorkflowService', () => {
@@ -188,9 +195,7 @@ describe('WorkflowService', () => {
       const { service, mockPrisma } = createMocks();
       mockPrisma.workflowExecution.findFirst.mockResolvedValue(null);
 
-      await expect(service.getStatus('p1', 'v1', 'e1', 'u1')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.getStatus('p1', 'v1', 'e1', 'u1')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -332,9 +337,7 @@ describe('WorkflowService', () => {
         projectId: 'p1',
         versionId: 'v1',
         status: 'running',
-        steps: [
-          { id: 's1', step: 'analysis', status: 'running', progress: 50 },
-        ],
+        steps: [{ id: 's1', step: 'analysis', status: 'running', progress: 50 }],
       };
       mockPrisma.workflowExecution.findFirst.mockResolvedValue(execution);
       mockPrisma.workflowStep.update.mockResolvedValue({});

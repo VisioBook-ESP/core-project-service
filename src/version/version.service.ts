@@ -13,11 +13,7 @@ export class VersionService {
     private readonly projectService: ProjectService,
   ) {}
 
-  async create(
-    projectId: string,
-    userId: string,
-    dto: CreateVersionDto,
-  ): Promise<ProjectVersion> {
+  async create(projectId: string, userId: string, dto: CreateVersionDto): Promise<ProjectVersion> {
     const project = await this.projectService.ensureOwnership(projectId, userId);
 
     const aggregate = await this.prisma.projectVersion.aggregate({
@@ -45,10 +41,7 @@ export class VersionService {
     return version;
   }
 
-  async listByProject(
-    projectId: string,
-    userId: string,
-  ): Promise<ProjectVersion[]> {
+  async listByProject(projectId: string, userId: string): Promise<ProjectVersion[]> {
     await this.projectService.ensureOwnership(projectId, userId);
 
     return this.prisma.projectVersion.findMany({
@@ -57,11 +50,7 @@ export class VersionService {
     });
   }
 
-  async findById(
-    projectId: string,
-    versionId: string,
-    userId: string,
-  ): Promise<ProjectVersion> {
+  async findById(projectId: string, versionId: string, userId: string): Promise<ProjectVersion> {
     await this.projectService.ensureOwnership(projectId, userId);
 
     const version = await this.prisma.projectVersion.findFirst({

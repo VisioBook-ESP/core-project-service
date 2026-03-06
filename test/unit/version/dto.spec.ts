@@ -49,8 +49,14 @@ describe('VersionResponseSchema', () => {
 
   it('should accept all valid status values', () => {
     const statuses = [
-      'draft', 'analyzing', 'analyzed', 'configuring',
-      'generating', 'completed', 'failed', 'cancelled',
+      'draft',
+      'analyzing',
+      'analyzed',
+      'configuring',
+      'generating',
+      'completed',
+      'failed',
+      'cancelled',
     ];
     for (const status of statuses) {
       const result = VersionResponseSchema.safeParse({ ...validResponse, status });

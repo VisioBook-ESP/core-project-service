@@ -143,7 +143,9 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
 
   private async startConsuming(): Promise<void> {
     try {
-      const consumer = await this.js.consumers.get(STREAM_NAME, CONSUMER_NAME).then((c) => c.consume());
+      const consumer = await this.js.consumers
+        .get(STREAM_NAME, CONSUMER_NAME)
+        .then((c) => c.consume());
       this.consumer = consumer;
       this.logger.log('Started consuming AI events');
 

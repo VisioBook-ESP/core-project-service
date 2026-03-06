@@ -112,7 +112,10 @@ describe('VersionService', () => {
   describe('listByProject', () => {
     it('should return versions ordered by versionNumber desc', async () => {
       const { service, mockPrisma } = createMocks();
-      const versions = [{ id: 'v2', versionNumber: 2 }, { id: 'v1', versionNumber: 1 }];
+      const versions = [
+        { id: 'v2', versionNumber: 2 },
+        { id: 'v1', versionNumber: 1 },
+      ];
       mockPrisma.projectVersion.findMany.mockResolvedValue(versions);
 
       const result = await service.listByProject('p1', 'u1');

@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../common/database/prisma.service.js';
 import { NatsPublisher } from '../messaging/nats.publisher.js';
 import type { Project, Prisma } from '../generated/prisma/client.js';
@@ -106,11 +101,7 @@ export class ProjectService {
     };
   }
 
-  async update(
-    projectId: string,
-    userId: string,
-    dto: UpdateProjectDto,
-  ): Promise<Project> {
+  async update(projectId: string, userId: string, dto: UpdateProjectDto): Promise<Project> {
     await this.ensureOwnership(projectId, userId);
 
     const activeVersion = await this.prisma.projectVersion.findFirst({
@@ -121,9 +112,7 @@ export class ProjectService {
     });
 
     if (activeVersion) {
-      throw new ConflictException(
-        'Cannot update project while a workflow is active',
-      );
+      throw new ConflictException('Cannot update project while a workflow is active');
     }
 
     const data: Prisma.ProjectUpdateInput = {};

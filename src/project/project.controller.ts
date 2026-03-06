@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Query,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { ProjectService } from './project.service.js';
@@ -26,19 +16,13 @@ export class ProjectController {
   @HttpCode(201)
   @ApiOperation({ summary: 'Create a new project' })
   @ApiResponse({ status: 201, type: ProjectResponseDtoClass })
-  async create(
-    @CurrentUser() userId: string,
-    @Body() dto: CreateProjectDtoClass,
-  ) {
+  async create(@CurrentUser() userId: string, @Body() dto: CreateProjectDtoClass) {
     return this.projectService.create(userId, dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List projects for the current user' })
-  async findAll(
-    @CurrentUser() userId: string,
-    @Query() query: ListProjectsQueryDtoClass,
-  ) {
+  async findAll(@CurrentUser() userId: string, @Query() query: ListProjectsQueryDtoClass) {
     return this.projectService.findAllByUser(userId, query);
   }
 
@@ -46,10 +30,7 @@ export class ProjectController {
   @ApiOperation({ summary: 'Get a project by ID' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 200, type: ProjectResponseDtoClass })
-  async findOne(
-    @CurrentUser() userId: string,
-    @Param('id') id: string,
-  ) {
+  async findOne(@CurrentUser() userId: string, @Param('id') id: string) {
     return this.projectService.findById(id, userId);
   }
 
@@ -70,10 +51,7 @@ export class ProjectController {
   @ApiOperation({ summary: 'Soft-delete a project' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 204 })
-  async remove(
-    @CurrentUser() userId: string,
-    @Param('id') id: string,
-  ) {
+  async remove(@CurrentUser() userId: string, @Param('id') id: string) {
     await this.projectService.softDelete(id, userId);
   }
 }

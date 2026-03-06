@@ -96,16 +96,19 @@ export class WorkflowService {
     // Validate transition using XState
     const actor = createActor(workflowMachine, {
       snapshot: {
-        ...workflowMachine.resolveState({ value: 'draft', context: {
-          projectId,
-          versionId,
-          executionId: '',
-          hasContent: true,
-          hasQuota: true,
-          hasScenes: false,
-          retryCount: 0,
-          maxRetries: 3,
-        }}),
+        ...workflowMachine.resolveState({
+          value: 'draft',
+          context: {
+            projectId,
+            versionId,
+            executionId: '',
+            hasContent: true,
+            hasQuota: true,
+            hasScenes: false,
+            retryCount: 0,
+            maxRetries: 3,
+          },
+        }),
       },
     });
     actor.start();
@@ -247,10 +250,7 @@ export class WorkflowService {
       correlationId: correlationId ?? executionId,
     });
 
-    this.logger.log(
-      { projectId, versionId, executionId, userId },
-      'Workflow cancelled',
-    );
+    this.logger.log({ projectId, versionId, executionId, userId }, 'Workflow cancelled');
   }
 
   async handleStepCompleted(
@@ -269,7 +269,10 @@ export class WorkflowService {
     }
 
     if (execution.status !== 'running') {
-      this.logger.warn({ executionId, step, status: execution.status }, 'Execution not running, ignoring step completion');
+      this.logger.warn(
+        { executionId, step, status: execution.status },
+        'Execution not running, ignoring step completion',
+      );
       return;
     }
 
@@ -399,11 +402,7 @@ export class WorkflowService {
     this.logger.log({ executionId, step }, 'Step completed');
   }
 
-  async handleStepFailed(
-    executionId: string,
-    step: string,
-    error: string,
-  ): Promise<void> {
+  async handleStepFailed(executionId: string, step: string, error: string): Promise<void> {
     const execution = await this.prisma.workflowExecution.findFirst({
       where: { id: executionId },
       include: { steps: true },
@@ -452,11 +451,7 @@ export class WorkflowService {
     this.logger.log({ executionId, step, error }, 'Step failed');
   }
 
-  async handleProgressUpdate(
-    executionId: string,
-    step: string,
-    progress: number,
-  ): Promise<void> {
+  async handleProgressUpdate(executionId: string, step: string, progress: number): Promise<void> {
     const execution = await this.prisma.workflowExecution.findFirst({
       where: { id: executionId },
       include: { steps: true },

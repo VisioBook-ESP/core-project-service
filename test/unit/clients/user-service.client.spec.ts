@@ -14,7 +14,6 @@ function createClient() {
 }
 
 describe('UserServiceClient', () => {
-
   describe('checkQuota', () => {
     it('should return quota check result on success', async () => {
       const { client, mockHttpService } = createClient();

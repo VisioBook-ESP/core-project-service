@@ -51,9 +51,6 @@ export class WorkflowProcessor extends WorkerHost {
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job<WorkflowJobData>): void {
-    this.logger.log(
-      { jobName: job.name, jobId: job.id },
-      'Workflow job completed',
-    );
+    this.logger.log({ jobName: job.name, jobId: job.id }, 'Workflow job completed');
   }
 }

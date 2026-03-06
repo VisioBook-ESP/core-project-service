@@ -53,9 +53,7 @@ describe('ProjectService', () => {
       const { service, mockPrisma } = createMocks();
       mockPrisma.project.findFirst.mockResolvedValue(null);
 
-      await expect(service.ensureOwnership('p1', 'wrong-user')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.ensureOwnership('p1', 'wrong-user')).rejects.toThrow(NotFoundException);
     });
   });
 

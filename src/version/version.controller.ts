@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { VersionService } from './version.service.js';
@@ -34,10 +27,7 @@ export class VersionController {
   @ApiOperation({ summary: 'List versions for a project' })
   @ApiParam({ name: 'projectId', format: 'uuid' })
   @ApiResponse({ status: 200, type: [VersionResponseDtoClass] })
-  async findAll(
-    @CurrentUser() userId: string,
-    @Param('projectId') projectId: string,
-  ) {
+  async findAll(@CurrentUser() userId: string, @Param('projectId') projectId: string) {
     return this.versionService.listByProject(projectId, userId);
   }
 

@@ -60,10 +60,7 @@ describe('NATS JetStream (integration)', () => {
     const js = nc.jetstream();
 
     const payload = { projectId: 'p-1', event: 'started' };
-    await js.publish(
-      'visiobook.project.workflow.started',
-      sc.encode(JSON.stringify(payload)),
-    );
+    await js.publish('visiobook.project.workflow.started', sc.encode(JSON.stringify(payload)));
 
     // Create a durable consumer
     await jsm.consumers.add(testStream, {

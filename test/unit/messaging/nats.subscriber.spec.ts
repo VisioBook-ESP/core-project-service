@@ -23,7 +23,9 @@ function callHandleMessage(
   subject: string,
   data: Record<string, unknown>,
 ): Promise<void> {
-  return (subscriber as unknown as Record<string, (...args: unknown[]) => Promise<void>>).handleMessage(subject, data);
+  return (
+    subscriber as unknown as Record<string, (...args: unknown[]) => Promise<void>>
+  ).handleMessage(subject, data);
 }
 
 describe('NatsSubscriber', () => {
@@ -32,7 +34,7 @@ describe('NatsSubscriber', () => {
       const { subscriber, mockWorkflowService } = createSubscriber();
       const data = { executionId: 'e1', scenes: [], characters: [] };
 
-      await callHandleMessage(subscriber,AI_SUBJECTS.ANALYSIS_COMPLETED, data);
+      await callHandleMessage(subscriber, AI_SUBJECTS.ANALYSIS_COMPLETED, data);
 
       expect(mockWorkflowService.handleStepCompleted).toHaveBeenCalledWith('e1', 'analysis', data);
     });
@@ -41,7 +43,7 @@ describe('NatsSubscriber', () => {
       const { subscriber, mockWorkflowService } = createSubscriber();
       const data = { executionId: 'e1', error: 'analysis broke' };
 
-      await callHandleMessage(subscriber,AI_SUBJECTS.ANALYSIS_FAILED, data);
+      await callHandleMessage(subscriber, AI_SUBJECTS.ANALYSIS_FAILED, data);
 
       expect(mockWorkflowService.handleStepFailed).toHaveBeenCalledWith(
         'e1',
@@ -54,7 +56,7 @@ describe('NatsSubscriber', () => {
       const { subscriber, mockWorkflowService } = createSubscriber();
       const data = { executionId: 'e1', sceneId: 's1', imageUrl: 'https://img.url' };
 
-      await callHandleMessage(subscriber,AI_SUBJECTS.MEDIA_IMAGE_COMPLETED, data);
+      await callHandleMessage(subscriber, AI_SUBJECTS.MEDIA_IMAGE_COMPLETED, data);
 
       expect(mockWorkflowService.handleStepCompleted).toHaveBeenCalledWith(
         'e1',
@@ -67,7 +69,7 @@ describe('NatsSubscriber', () => {
       const { subscriber, mockWorkflowService } = createSubscriber();
       const data = { executionId: 'e1', audioUrl: 'https://audio.url' };
 
-      await callHandleMessage(subscriber,AI_SUBJECTS.MEDIA_AUDIO_COMPLETED, data);
+      await callHandleMessage(subscriber, AI_SUBJECTS.MEDIA_AUDIO_COMPLETED, data);
 
       expect(mockWorkflowService.handleStepCompleted).toHaveBeenCalledWith(
         'e1',
@@ -80,20 +82,16 @@ describe('NatsSubscriber', () => {
       const { subscriber, mockWorkflowService } = createSubscriber();
       const data = { executionId: 'e1', videoUrl: 'https://video.url' };
 
-      await callHandleMessage(subscriber,AI_SUBJECTS.ASSEMBLY_COMPLETED, data);
+      await callHandleMessage(subscriber, AI_SUBJECTS.ASSEMBLY_COMPLETED, data);
 
-      expect(mockWorkflowService.handleStepCompleted).toHaveBeenCalledWith(
-        'e1',
-        'assembly',
-        data,
-      );
+      expect(mockWorkflowService.handleStepCompleted).toHaveBeenCalledWith('e1', 'assembly', data);
     });
 
     it('should route ASSEMBLY_FAILED to handleStepFailed with assembly step', async () => {
       const { subscriber, mockWorkflowService } = createSubscriber();
       const data = { executionId: 'e1', error: 'assembly broke' };
 
-      await callHandleMessage(subscriber,AI_SUBJECTS.ASSEMBLY_FAILED, data);
+      await callHandleMessage(subscriber, AI_SUBJECTS.ASSEMBLY_FAILED, data);
 
       expect(mockWorkflowService.handleStepFailed).toHaveBeenCalledWith(
         'e1',
@@ -106,7 +104,7 @@ describe('NatsSubscriber', () => {
       const { subscriber, mockWorkflowService } = createSubscriber();
       const data = { executionId: 'e1', step: 'image_generation', progress: 42 };
 
-      await callHandleMessage(subscriber,AI_SUBJECTS.PROGRESS, data);
+      await callHandleMessage(subscriber, AI_SUBJECTS.PROGRESS, data);
 
       expect(mockWorkflowService.handleProgressUpdate).toHaveBeenCalledWith(
         'e1',

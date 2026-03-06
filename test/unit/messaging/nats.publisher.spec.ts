@@ -22,7 +22,6 @@ function createPublisher() {
 }
 
 describe('NatsPublisher', () => {
-
   describe('publishWorkflowStarted', () => {
     it('should publish to WORKFLOW_STARTED subject', async () => {
       const { publisher, mockJs } = createPublisher();
@@ -40,7 +39,10 @@ describe('NatsPublisher', () => {
 
       await publisher.publishWorkflowStarted(payload);
 
-      expect(mockJs.publish).toHaveBeenCalledWith(SUBJECTS.WORKFLOW_STARTED, expect.any(Uint8Array));
+      expect(mockJs.publish).toHaveBeenCalledWith(
+        SUBJECTS.WORKFLOW_STARTED,
+        expect.any(Uint8Array),
+      );
     });
   });
 

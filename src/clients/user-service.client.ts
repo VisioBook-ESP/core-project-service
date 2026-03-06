@@ -38,9 +38,13 @@ export class UserServiceClient {
   async decrementQuota(userId: string, requestId?: string): Promise<void> {
     await this.withRetry<void>(async () => {
       await firstValueFrom(
-        this.httpService.post(`${this.baseUrl}/api/v1/users/${userId}/quota/decrement`, {}, {
-          headers: this.buildHeaders(requestId),
-        }),
+        this.httpService.post(
+          `${this.baseUrl}/api/v1/users/${userId}/quota/decrement`,
+          {},
+          {
+            headers: this.buildHeaders(requestId),
+          },
+        ),
       );
     }, 'decrementQuota');
   }
