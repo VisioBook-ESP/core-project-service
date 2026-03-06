@@ -103,6 +103,26 @@ core-project-service is the central business logic service for VisioBook. It own
 | Container Registry    | GitHub Container Registry | Docker images pushed by CI.                                                             |
 | Deployment            | ArgoCD                    | GitOps-based, handled by a separate team. This repo provides Helm charts only.          |
 
+### Database Architecture
+
+**Pattern: Database-per-service.** Each microservice owns and manages its own database schema. There is no shared database or central database proxy — every service connects directly to its database via its own ORM/driver.
+
+**CNPG Pod Topology.** The Kubernetes cluster runs exactly **2 CloudNativePG pods**:
+
+| CNPG Pod      | Purpose                                                                                   | Example Services                                                            |
+| ------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **cnpg-crud** | Optimized for CRUD operations (reads, writes, transactional queries, index-heavy access)  | core-user-service, core-project-service, core-payment-service               |
+| **cnpg-io**   | Optimized for I/O-intensive tasks (bulk text ingestion, AI workflow metadata, embeddings) | content-ingestion-service, ai-analysis-service, ai-media-generation-service |
+
+Each microservice has its own **database** (logical database) within the appropriate CNPG pod. For example, core-project-service connects to a `visiobook_project` database on the `cnpg-crud` pod.
+
+**core-project-service connects to both CNPG pods:**
+
+- **cnpg-crud** — Primary database for all project/version/content CRUD operations, share links, and workflow execution tracking.
+- **cnpg-io** — Used when writing extracted text, scene metadata, and character data during AI ingestion workflows.
+
+The connection strings are configured via `DATABASE_CRUD_URL` and `DATABASE_IO_URL` environment variables.
+
 ### Infrastructure Dependency Diagram
 
 ```mermaid
@@ -114,12 +134,14 @@ graph LR
     end
 
     subgraph "Platform-Managed"
-        PG[(PostgreSQL / CNPG)]
+        PG_CRUD[(cnpg-crud<br/>CRUD Operations)]
+        PG_IO[(cnpg-io<br/>I/O Intensive)]
         REDIS[(Redis)]
         NATS_SERVER[NATS JetStream]
     end
 
-    APP -->|Prisma| PG
+    APP -->|Prisma| PG_CRUD
+    APP -->|Prisma| PG_IO
     APP -->|ioredis| REDIS
     BULL -->|ioredis| REDIS
     APP -->|nats.js| NATS_SERVER
@@ -1521,11 +1543,14 @@ All environment variables are validated at startup using a Zod schema. The appli
 
 ### Database
 
-| Variable            | Type   | Required | Default | Description                                  |
-| ------------------- | ------ | -------- | ------- | -------------------------------------------- |
-| `DATABASE_URL`      | String | Yes      | —       | PostgreSQL connection string (Prisma format) |
-| `DATABASE_POOL_MIN` | Number | No       | 2       | Minimum connection pool size                 |
-| `DATABASE_POOL_MAX` | Number | No       | 10      | Maximum connection pool size                 |
+core-project-service connects to **two CNPG pods** (see §2 — Database Architecture).
+
+| Variable            | Type   | Required | Default | Description                                                      |
+| ------------------- | ------ | -------- | ------- | ---------------------------------------------------------------- |
+| `DATABASE_CRUD_URL` | String | Yes      | —       | Connection string for cnpg-crud pod (project/version/share CRUD) |
+| `DATABASE_IO_URL`   | String | Yes      | —       | Connection string for cnpg-io pod (text ingestion, AI metadata)  |
+| `DATABASE_POOL_MIN` | Number | No       | 2       | Minimum connection pool size (per datasource)                    |
+| `DATABASE_POOL_MAX` | Number | No       | 10      | Maximum connection pool size (per datasource)                    |
 
 ### Redis
 
