@@ -17,6 +17,7 @@ function createPublisher() {
   p.js = mockJs;
   p.nc = mockNc;
   p.sc = mockSc;
+  p.connected = true;
 
   return { publisher, mockJs, mockNc, mockSc };
 }

@@ -1,29 +1,19 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { HealthIndicatorService, type HealthIndicatorResult } from '@nestjs/terminus';
-import { connect } from 'nats';
-import { APP_CONFIG } from '../common/config/app.config.js';
-import type { AppConfig } from '../common/config/app.config.js';
+import { NatsPublisher } from '../messaging/nats.publisher.js';
 
 @Injectable()
 export class NatsHealthIndicator {
   constructor(
     private readonly healthIndicatorService: HealthIndicatorService,
-    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly natsPublisher: NatsPublisher,
   ) {}
 
   async isHealthy(key: string): Promise<HealthIndicatorResult> {
     const indicator = this.healthIndicatorService.check(key);
-    try {
-      const nc = await connect({
-        servers: this.config.NATS_URL,
-        user: this.config.NATS_USER,
-        pass: this.config.NATS_PASSWORD,
-        timeout: 3000,
-      });
-      await nc.close();
+    if (this.natsPublisher.isConnected()) {
       return indicator.up();
-    } catch (error) {
-      return indicator.down({ message: (error as Error).message });
     }
+    return indicator.down({ message: 'NATS not connected' });
   }
 }

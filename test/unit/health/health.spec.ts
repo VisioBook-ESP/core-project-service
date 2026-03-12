@@ -26,19 +26,15 @@ describe('HealthController', () => {
   });
 
   describe('readiness', () => {
-    it('should return health check result when all indicators are healthy', async () => {
+    it('should return health check result when database is healthy', async () => {
       const expectedResult: HealthCheckResult = {
         status: 'ok',
         info: {
           database: { status: 'up' },
-          redis: { status: 'up' },
-          nats: { status: 'up' },
         },
         error: {},
         details: {
           database: { status: 'up' },
-          redis: { status: 'up' },
-          nats: { status: 'up' },
         },
       };
 
@@ -47,14 +43,10 @@ describe('HealthController', () => {
       const result = await controller.readiness();
 
       expect(result).toEqual(expectedResult);
-      expect(mockHealthService.check).toHaveBeenCalledWith([
-        expect.any(Function),
-        expect.any(Function),
-        expect.any(Function),
-      ]);
+      expect(mockHealthService.check).toHaveBeenCalledWith([expect.any(Function)]);
     });
 
-    it('should pass indicator callbacks that invoke the correct health indicators', async () => {
+    it('should pass indicator callback that invokes the database health indicator', async () => {
       mockHealthService.check.mockImplementation(
         async (indicators: Array<() => Promise<unknown>>) => {
           for (const indicator of indicators) {
@@ -65,14 +57,12 @@ describe('HealthController', () => {
       );
 
       mockPrismaHealth.isHealthy.mockResolvedValue({ database: { status: 'up' } });
-      mockRedisHealth.isHealthy.mockResolvedValue({ redis: { status: 'up' } });
-      mockNatsHealth.isHealthy.mockResolvedValue({ nats: { status: 'up' } });
 
       await controller.readiness();
 
       expect(mockPrismaHealth.isHealthy).toHaveBeenCalledWith('database');
-      expect(mockRedisHealth.isHealthy).toHaveBeenCalledWith('redis');
-      expect(mockNatsHealth.isHealthy).toHaveBeenCalledWith('nats');
+      expect(mockRedisHealth.isHealthy).not.toHaveBeenCalled();
+      expect(mockNatsHealth.isHealthy).not.toHaveBeenCalled();
     });
   });
 

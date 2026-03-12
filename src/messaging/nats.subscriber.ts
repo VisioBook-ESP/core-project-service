@@ -98,20 +98,44 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
     const { WorkflowService: WfService } = await import('../workflow/workflow.service.js');
     this.workflowService = this.moduleRef.get(WfService, { strict: false });
 
-    this.nc = await connect({
-      servers: this.config.NATS_URL,
-      user: this.config.NATS_USER,
-      pass: this.config.NATS_PASSWORD,
-    });
-    this.logger.log('Subscriber connected to NATS');
+    // Connect in background so the app can start even if NATS is temporarily unavailable
+    void this.connectWithRetry();
+  }
 
-    const jsm: JetStreamManager = await this.nc.jetstreamManager();
-    await this.ensureConsumer(jsm);
+  private async connectWithRetry(): Promise<void> {
+    const maxRetries = 10;
+    const baseDelay = 2000;
 
-    this.js = this.nc.jetstream();
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.nc = await connect({
+          servers: this.config.NATS_URL,
+          user: this.config.NATS_USER,
+          pass: this.config.NATS_PASSWORD,
+        });
+        this.logger.log('Subscriber connected to NATS');
 
-    // Fire-and-forget: start consuming without blocking init
-    void this.startConsuming();
+        const jsm: JetStreamManager = await this.nc.jetstreamManager();
+        await this.ensureConsumer(jsm);
+
+        this.js = this.nc.jetstream();
+
+        // Fire-and-forget: start consuming without blocking init
+        void this.startConsuming();
+        return;
+      } catch (error) {
+        this.logger.warn(
+          { attempt, maxRetries, error: (error as Error).message },
+          'Subscriber failed to connect to NATS, retrying...',
+        );
+        if (attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, baseDelay * attempt));
+        }
+      }
+    }
+    this.logger.error(
+      'Subscriber failed to connect to NATS after all retries — consuming unavailable',
+    );
   }
 
   async onModuleDestroy(): Promise<void> {

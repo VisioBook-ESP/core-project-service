@@ -87,7 +87,7 @@ env:
   NODE_ENV: production
   LOG_LEVEL: info
   SWAGGER_ENABLED: "false"
-  REDIS_HOST: redis.visiobook-namespace.svc.cluster.local
+  REDIS_HOST: redis-core-project.visiobook-namespace.svc.cluster.local
   REDIS_PORT: "6379"
   NATS_URL: nats://nats.visiobook-namespace.svc.cluster.local:4222
   USER_SERVICE_URL: http://core-user-service.visiobook-namespace.svc.cluster.local:8081

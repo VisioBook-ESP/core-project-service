@@ -18,16 +18,24 @@ export class HealthController {
   @Public()
   @HealthCheck()
   async readiness(): Promise<HealthCheckResult> {
-    return this.health.check([
-      () => this.prismaHealth.isHealthy('database'),
-      () => this.redisHealth.isHealthy('redis'),
-      () => this.natsHealth.isHealthy('nats'),
-    ]);
+    // Only check database for readiness — Redis/NATS are non-blocking dependencies
+    return this.health.check([() => this.prismaHealth.isHealthy('database')]);
   }
 
   @Get('live')
   @Public()
   liveness(): { status: string } {
     return { status: 'ok' };
+  }
+
+  @Get('details')
+  @Public()
+  @HealthCheck()
+  async details(): Promise<HealthCheckResult> {
+    return this.health.check([
+      () => this.prismaHealth.isHealthy('database'),
+      () => this.redisHealth.isHealthy('redis'),
+      () => this.natsHealth.isHealthy('nats'),
+    ]);
   }
 }
