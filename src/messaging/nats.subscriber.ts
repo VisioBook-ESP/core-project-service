@@ -133,7 +133,9 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
         }
       }
     }
-    this.logger.error('Subscriber failed to connect to NATS after all retries — consuming unavailable');
+    this.logger.error(
+      'Subscriber failed to connect to NATS after all retries — consuming unavailable',
+    );
   }
 
   async onModuleDestroy(): Promise<void> {

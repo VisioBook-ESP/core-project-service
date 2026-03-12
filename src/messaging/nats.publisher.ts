@@ -122,7 +122,9 @@ export class NatsPublisher implements OnModuleInit, OnModuleDestroy {
         }
       }
     }
-    this.logger.error('Failed to connect to NATS after all retries — publishing will be unavailable');
+    this.logger.error(
+      'Failed to connect to NATS after all retries — publishing will be unavailable',
+    );
   }
 
   isConnected(): boolean {
