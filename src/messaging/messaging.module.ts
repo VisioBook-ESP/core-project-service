@@ -5,7 +5,6 @@ import type { AppConfig } from '../common/config/app.config.js';
 import { NatsPublisher } from './nats.publisher.js';
 import { NatsSubscriber } from './nats.subscriber.js';
 import { UserServiceClient } from '../clients/user-service.client.js';
-import { StorageServiceClient } from '../clients/storage-service.client.js';
 
 @Module({
   imports: [
@@ -16,7 +15,7 @@ import { StorageServiceClient } from '../clients/storage-service.client.js';
       }),
     }),
   ],
-  providers: [NatsPublisher, NatsSubscriber, UserServiceClient, StorageServiceClient],
-  exports: [NatsPublisher, NatsSubscriber, UserServiceClient, StorageServiceClient],
+  providers: [NatsPublisher, NatsSubscriber, UserServiceClient],
+  exports: [NatsPublisher, NatsSubscriber, UserServiceClient],
 })
 export class MessagingModule {}

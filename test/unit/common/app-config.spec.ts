@@ -5,8 +5,6 @@ const REQUIRED_ENV = {
   REDIS_HOST: 'localhost',
   NATS_URL: 'nats://localhost:4222',
   USER_SERVICE_URL: 'http://localhost:8081',
-  STORAGE_SERVICE_URL: 'http://localhost:8082',
-  NOTIFICATION_SERVICE_URL: 'http://localhost:8083',
 };
 
 describe('validateEnv', () => {
@@ -33,8 +31,6 @@ describe('validateEnv', () => {
     expect(config.REDIS_HOST).toBe(REQUIRED_ENV.REDIS_HOST);
     expect(config.NATS_URL).toBe(REQUIRED_ENV.NATS_URL);
     expect(config.USER_SERVICE_URL).toBe(REQUIRED_ENV.USER_SERVICE_URL);
-    expect(config.STORAGE_SERVICE_URL).toBe(REQUIRED_ENV.STORAGE_SERVICE_URL);
-    expect(config.NOTIFICATION_SERVICE_URL).toBe(REQUIRED_ENV.NOTIFICATION_SERVICE_URL);
   });
 
   it('should apply default values when only required vars are set', () => {
