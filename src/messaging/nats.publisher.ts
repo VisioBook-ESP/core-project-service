@@ -77,29 +77,56 @@ export interface ProjectDeletedPayload {
 
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 500;
+const CONNECT_MAX_RETRIES = 10;
+const CONNECT_BASE_DELAY_MS = 2000;
 
 @Injectable()
 export class NatsPublisher implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(NatsPublisher.name);
-  private nc!: NatsConnection;
-  private js!: JetStreamClient;
+  private nc: NatsConnection | undefined;
+  private js: JetStreamClient | undefined;
   private sc = StringCodec();
+  private connected = false;
 
   constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
 
   async onModuleInit(): Promise<void> {
-    this.nc = await connect({
-      servers: this.config.NATS_URL,
-      user: this.config.NATS_USER,
-      pass: this.config.NATS_PASSWORD,
-    });
-    this.logger.log('Connected to NATS');
+    // Connect in background so the app can start even if NATS is temporarily unavailable
+    void this.connectWithRetry();
+  }
 
-    const jsm: JetStreamManager = await this.nc.jetstreamManager();
-    await this.ensureStream(jsm);
+  private async connectWithRetry(): Promise<void> {
+    for (let attempt = 1; attempt <= CONNECT_MAX_RETRIES; attempt++) {
+      try {
+        this.nc = await connect({
+          servers: this.config.NATS_URL,
+          user: this.config.NATS_USER,
+          pass: this.config.NATS_PASSWORD,
+        });
+        this.logger.log('Connected to NATS');
 
-    this.js = this.nc.jetstream();
-    this.logger.log('JetStream client initialized');
+        const jsm: JetStreamManager = await this.nc.jetstreamManager();
+        await this.ensureStream(jsm);
+
+        this.js = this.nc.jetstream();
+        this.connected = true;
+        this.logger.log('JetStream client initialized');
+        return;
+      } catch (error) {
+        this.logger.warn(
+          { attempt, maxRetries: CONNECT_MAX_RETRIES, error: (error as Error).message },
+          'Failed to connect to NATS, retrying...',
+        );
+        if (attempt < CONNECT_MAX_RETRIES) {
+          await new Promise((resolve) => setTimeout(resolve, CONNECT_BASE_DELAY_MS * attempt));
+        }
+      }
+    }
+    this.logger.error('Failed to connect to NATS after all retries — publishing will be unavailable');
+  }
+
+  isConnected(): boolean {
+    return this.connected;
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -128,6 +155,10 @@ export class NatsPublisher implements OnModuleInit, OnModuleDestroy {
   }
 
   private async publishWithRetry(subject: string, payload: unknown): Promise<void> {
+    if (!this.connected || !this.js) {
+      this.logger.warn({ subject }, 'NATS not connected — message dropped');
+      return;
+    }
     const data = this.sc.encode(JSON.stringify(payload));
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
