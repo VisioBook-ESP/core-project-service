@@ -37,8 +37,6 @@ export const envSchema = z.object({
 
   // External services
   USER_SERVICE_URL: z.string().url(),
-  STORAGE_SERVICE_URL: z.string().url(),
-  NOTIFICATION_SERVICE_URL: z.string().url(),
   HTTP_CLIENT_TIMEOUT: z.coerce.number().int().positive().default(5000),
 
   // Feature flags
