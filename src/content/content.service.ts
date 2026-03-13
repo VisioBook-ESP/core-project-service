@@ -1,8 +1,9 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/database/prisma.service.js';
 import { ProjectService } from '../project/project.service.js';
-import type { ProjectContent, Scene, Prisma } from '../generated/prisma/client.js';
+import type { ProjectContent, Scene, Character, Prisma } from '../generated/prisma/client.js';
 import type { UpdateContentDto } from './dto/update-content.dto.js';
+import type { UpdateSceneDto } from './dto/update-scene.dto.js';
 
 @Injectable()
 export class ContentService {
@@ -60,6 +61,50 @@ export class ContentService {
     return this.prisma.scene.findMany({
       where: { projectId },
       orderBy: { order: 'asc' },
+    });
+  }
+
+  async getSummary(projectId: string, userId: string): Promise<{ summary: string | null }> {
+    await this.projectService.ensureOwnership(projectId, userId);
+
+    const content = await this.prisma.projectContent.findUnique({
+      where: { projectId },
+      select: { summary: true },
+    });
+
+    return { summary: content?.summary ?? null };
+  }
+
+  async updateScene(
+    projectId: string,
+    sceneId: string,
+    userId: string,
+    dto: UpdateSceneDto,
+  ): Promise<Scene> {
+    await this.projectService.ensureOwnership(projectId, userId);
+
+    const scene = await this.prisma.scene.findFirst({
+      where: { id: sceneId, projectId },
+    });
+
+    if (!scene) {
+      throw new NotFoundException('Scene not found');
+    }
+
+    const updated = await this.prisma.scene.update({
+      where: { id: sceneId },
+      data: dto,
+    });
+
+    this.logger.log({ projectId, sceneId, userId }, 'Scene updated');
+    return updated;
+  }
+
+  async listCharacters(projectId: string, userId: string): Promise<Character[]> {
+    await this.projectService.ensureOwnership(projectId, userId);
+
+    return this.prisma.character.findMany({
+      where: { projectId },
     });
   }
 }

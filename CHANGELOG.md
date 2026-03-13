@@ -5,6 +5,116 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+#### E2E Tests (Tasks 3.18a-g)
+
+- `test/e2e/setup.ts` — E2E bootstrap with testcontainers (PostgreSQL, Redis, NATS), process.env-based config, mocked external clients
+- `test/helpers/auth.ts` — auth header helpers (TEST_USER_ID, OTHER_USER_ID, authHeaders)
+- `test/helpers/seed.ts` — database seeding helpers (seedProject, seedProjectWithContent, seedVersion, seedExecution, seedShareLink, seedScenes, seedCharacters)
+- `test/e2e/project.e2e.spec.ts` — 12 tests: create, validation, list, pagination, get, ownership 404, update, soft-delete, auth 401, search fulltext, search empty
+- `test/e2e/content.e2e.spec.ts` — 8 tests: get content, ownership 404, update content, list scenes, update scene, summary, list characters, empty characters
+- `test/e2e/version.e2e.spec.ts` — 6 tests: create version, auto-increment, list, get with executions, ownership 404 (GET/POST)
+- `test/e2e/workflow.e2e.spec.ts` — 6 tests: start workflow, get status, cancel running, cancel non-running 409, retry failed, ownership 404
+- `test/e2e/share.e2e.spec.ts` — 6 tests: create share link, create with expiry, access shared project, expired 404, invalid token 404, ownership 404
+- Total: 38 E2E tests passing across 5 test files
+- Added `unplugin-swc` and `@swc/core` dev dependencies for correct decorator metadata in Vitest E2E tests
+- Added `.swcrc` config for SWC decorator metadata support
+- Updated `vitest.workspace.ts` with SWC plugin for E2E project
+
+### Fixed
+
+- Fixed `ProjectService.search` — replaced `SELECT p.*` with explicit column list to avoid Prisma `UnsupportedNativeDataType` error on `tsvector` columns
+
+#### Wave 14 Unit Tests (Tasks 3.19a-j)
+
+- `test/unit/project/project-search.spec.ts` — ProjectService.search ($queryRaw, pagination, trim) + ProjectController feature flag (8 tests)
+- `test/unit/content/content-summary.spec.ts` — ContentService.getSummary (summary, null, ownership) (4 tests)
+- `test/unit/content/scene-update.spec.ts` — ContentService.updateScene (partial update, 404, ownership) (5 tests)
+- `test/unit/content/characters.spec.ts` — ContentService.listCharacters (results, empty array, ownership) (3 tests)
+- `test/unit/workflow/workflow-cancel.spec.ts` — WorkflowService.cancelWorkflow (DB updates, BullMQ removal, NATS event, SSE emit, 409 conflict) (8 tests)
+- `test/unit/workflow/workflow-retry.spec.ts` — WorkflowService.retryWorkflow (new execution, skip completed, enqueue from failed, 409, max retries, version status) (8 tests)
+- `test/unit/workflow/workflow-sse.spec.ts` — WorkflowSSEController (initial snapshot, feature flag, 404, ownership) (4 tests)
+- `test/unit/share/share.service.spec.ts` — ShareService create/access (token, expiry, password-protected, deleted project) (9 tests)
+- `test/unit/clients/notification-service.client.spec.ts` — NotificationServiceClient (POST, retries, best-effort no-throw, backoff) (5 tests)
+- `test/unit/common/metrics.spec.ts` — MetricsService, MetricsInterceptor, MetricsController (counters, Prometheus format) (7 tests)
+- Total: 261 unit tests passing across 28 test files
+
+#### Swagger Documentation Verification (Wave 13, Tasks 3.14a-h)
+
+- Added `@ApiTags('Health')`, `@ApiOperation`, and `@ApiResponse` decorators to `HealthController` (readiness, liveness, details endpoints)
+- Added missing `@ApiResponse` decorator to `ProjectController.findAll`
+- Verified all other controllers already have `@ApiTags`, `@ApiOperation`, and `@ApiResponse` decorators: Projects, Content, Versions, Workflow, Sharing
+- Verified Swagger setup in `main.ts` with `DocumentBuilder`, `patchNestJsSwagger()`, and `SWAGGER_ENABLED` guard
+
+## [0.3.0]
+
+Phase 3 Wave 12 (Feature Extensions) — full-text search, share links, SSE streaming, workflow retry/cancel, notification client, Prometheus metrics, NATS hardening, graceful shutdown. 200 unit tests passing.
+
+### Added
+
+#### Full-Text Search (Wave 12, Tasks 3.1a-c)
+
+- Prisma migration with tsvector columns + GIN indexes on Project.title and ProjectContent.text
+- `search(userId, query, pagination)` in ProjectService using `$queryRaw` with `plainto_tsquery` + `ts_rank`
+- `GET /search` endpoint in ProjectController guarded by `FEATURE_SEARCH_ENABLED`
+- `src/project/dto/search-projects-query.dto.ts` — Zod schema (q, page, pageSize)
+
+#### Content Extensions (Wave 12, Tasks 3.2-3.4)
+
+- `getSummary(projectId, userId)` method + `GET /summary` endpoint in ContentService/Controller
+- `src/content/dto/update-scene.dto.ts` — partial update Zod schema (at least one field required)
+- `updateScene()` method + `PATCH /scenes/:sceneId` endpoint
+- `src/content/dto/character-response.dto.ts` — Zod schema
+- `listCharacters()` method + `GET /characters` endpoint
+
+#### Share Module (Wave 12, Tasks 3.8-3.10)
+
+- `src/share/` — complete new module with controller, service, DTOs
+- Share link creation with `crypto.randomBytes(32).toString('base64url')` tokens
+- Public access endpoint `GET /shared/:token` with `@Public()` decorator
+- Expiration and password protection checks
+- Guarded by `FEATURE_SHARE_ENABLED` config flag
+
+#### Workflow Extensions (Wave 12, Tasks 3.5-3.7, 3.11)
+
+- Enhanced `cancelWorkflow()` — BullMQ job removal, steps marked as `skipped`
+- `retryWorkflow()` — new execution, skips completed steps, retries from failed step
+- `src/workflow/workflow.sse.controller.ts` — SSE endpoint for real-time progress via EventEmitter2
+- `src/clients/notification-service.client.ts` — best-effort notifications (retry 3x, no throw)
+- Notifications on workflow complete/fail integrated into WorkflowService
+
+#### NATS Hardening (Wave 12, Task 3.12)
+
+- Zod validation schemas for all 7 inbound event types
+- Idempotency checks (skip duplicate image.completed for same scene)
+- Prisma transactions for analysis completed (scenes + characters atomically)
+- Structured logging with `{ subject, executionId, correlationId }`
+- Dead-letter handling for poison messages
+
+#### Observability Infrastructure (Wave 12, Tasks 3.13a-c)
+
+- `src/metrics/` — global module with MetricsService, MetricsController, MetricsInterceptor
+- All prom-client metrics defined (HTTP, workflow, BullMQ, NATS, Prisma, SSE)
+- `GET /metrics` public endpoint returning Prometheus exposition format
+- HTTP request counting/timing interceptor registered globally
+
+#### Correlation ID & Graceful Shutdown (Wave 12, Tasks 3.15-3.16)
+
+- Verified X-Request-Id propagation across LoggingInterceptor, HTTP clients, NATS publisher
+- NotificationServiceClient includes X-Request-Id header
+- `onModuleDestroy()` in WorkflowProcessor (close BullMQ workers)
+- Verified: app.enableShutdownHooks(), NATS drain, PrismaService.$disconnect()
+
+#### Configuration
+
+- Added `NOTIFICATION_SERVICE_URL` (required) and `STORAGE_SERVICE_URL` (optional) to app.config.ts
+- Installed `@nestjs/event-emitter` for SSE EventEmitter2 pattern
+
+---
+
 ## [0.2.0]
 
 Phase 2 (Core MVP) — Waves 6-11 complete. All business logic modules, workflow engine, messaging, 204 unit tests and 15 integration tests passing.

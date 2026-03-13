@@ -57,4 +57,21 @@ export class WorkflowController {
   ) {
     await this.workflowService.cancelWorkflow(projectId, versionId, executionId, userId);
   }
+
+  @Post('retry/:executionId')
+  @HttpCode(202)
+  @ApiOperation({ summary: 'Retry a failed workflow' })
+  @ApiParam({ name: 'projectId', format: 'uuid' })
+  @ApiParam({ name: 'versionId', format: 'uuid' })
+  @ApiParam({ name: 'executionId', format: 'uuid' })
+  @ApiResponse({ status: 202, description: 'Workflow retry started' })
+  async retry(
+    @CurrentUser() userId: string,
+    @Param('projectId') projectId: string,
+    @Param('versionId') versionId: string,
+    @Param('executionId') _executionId: string,
+  ) {
+    const correlationId = randomUUID();
+    return this.workflowService.retryWorkflow(projectId, versionId, userId, correlationId);
+  }
 }

@@ -489,39 +489,39 @@ Sequential: 2.22 → 2.24 → 2.25 → 2.26
 
 #### Agent: `backend` — "content-extensions"
 
-- [ ] **(3.2a)** Add `getSummary(projectId, userId)` method to `ContentService`: verify ownership, query `ProjectContent.summary`. Return `{ summary }` (or null if not yet analyzed).
-- [ ] **(3.2b)** Add `GET /summary` endpoint to `ContentController`: return `200`.
-- [ ] **(3.3a)** Create `src/content/dto/update-scene.dto.ts`: Zod schema — `text` (optional), `description` (optional), `imagePrompt` (optional). At least one field required.
-- [ ] **(3.3b)** Add `updateScene(projectId, sceneId, userId, dto)` method to `ContentService`: verify ownership, find `Scene` by `id` AND `projectId`, throw 404 if not found, update fields.
-- [ ] **(3.3c)** Add `PATCH /scenes/:sceneId` endpoint to `ContentController`: return `200`.
-- [ ] **(3.4a)** Create `src/content/dto/character-response.dto.ts`: Zod schema — `id`, `projectId`, `name`, `description`, `aliases`, `traits`.
-- [ ] **(3.4b)** Add `listCharacters(projectId, userId)` method to `ContentService`: verify ownership, return `Character[]`.
-- [ ] **(3.4c)** Add `GET /characters` endpoint to `ContentController`: return `200`.
+- [x] **(3.2a)** Add `getSummary(projectId, userId)` method to `ContentService`: verify ownership, query `ProjectContent.summary`. Return `{ summary }` (or null if not yet analyzed).
+- [x] **(3.2b)** Add `GET /summary` endpoint to `ContentController`: return `200`.
+- [x] **(3.3a)** Create `src/content/dto/update-scene.dto.ts`: Zod schema — `text` (optional), `description` (optional), `imagePrompt` (optional). At least one field required.
+- [x] **(3.3b)** Add `updateScene(projectId, sceneId, userId, dto)` method to `ContentService`: verify ownership, find `Scene` by `id` AND `projectId`, throw 404 if not found, update fields.
+- [x] **(3.3c)** Add `PATCH /scenes/:sceneId` endpoint to `ContentController`: return `200`.
+- [x] **(3.4a)** Create `src/content/dto/character-response.dto.ts`: Zod schema — `id`, `projectId`, `name`, `description`, `aliases`, `traits`.
+- [x] **(3.4b)** Add `listCharacters(projectId, userId)` method to `ContentService`: verify ownership, return `Character[]`.
+- [x] **(3.4c)** Add `GET /characters` endpoint to `ContentController`: return `200`.
 
 #### Agent: `backend` — "share-module"
 
 Sequential: 3.8 → 3.9 → 3.10
 
-- [ ] **(3.8a)** Create `src/share/dto/create-share-link.dto.ts`: Zod schema — `expiresAt` (ISO 8601, optional, must be future), `allowDownload` (boolean, optional, default false).
-- [ ] **(3.8b)** Create `src/share/dto/share-link-response.dto.ts`: Zod schema — `id`, `projectId`, `shareToken`, `expiresAt`, `allowDownload`, `createdAt`. Exclude `passwordHash`.
-- [ ] **(3.8c)** Create `src/share/share.service.ts` with `PrismaService` and `ProjectService`. Method:
+- [x] **(3.8a)** Create `src/share/dto/create-share-link.dto.ts`: Zod schema — `expiresAt` (ISO 8601, optional, must be future), `allowDownload` (boolean, optional, default false).
+- [x] **(3.8b)** Create `src/share/dto/share-link-response.dto.ts`: Zod schema — `id`, `projectId`, `shareToken`, `expiresAt`, `allowDownload`, `createdAt`. Exclude `passwordHash`.
+- [x] **(3.8c)** Create `src/share/share.service.ts` with `PrismaService` and `ProjectService`. Method:
   - `createShareLink(projectId, userId, dto)`: verify ownership. Generate 32-byte token via `crypto.randomBytes(32).toString('base64url')`. Create `ShareLink`. Return response without hash.
-- [ ] **(3.9a)** Add `accessSharedProject(token)` method to `ShareService`:
+- [x] **(3.9a)** Add `accessSharedProject(token)` method to `ShareService`:
   1. Find `ShareLink` by `shareToken`. Throw 404 if not found.
   2. Check expiration. Throw 404 if expired.
   3. If `passwordHash` set → return `{ requiresPassword: true }`.
   4. Load latest completed version. Return `{ title, videoUrl, allowDownload, createdAt }`. Do NOT expose userId/projectId.
-- [ ] **(3.9b)** Create `src/share/dto/shared-project-response.dto.ts`: Zod schema — `title`, `videoUrl`, `allowDownload`, `requiresPassword`, `createdAt`.
-- [ ] **(3.9c)** Create `src/share/share.controller.ts`:
+- [x] **(3.9b)** Create `src/share/dto/shared-project-response.dto.ts`: Zod schema — `title`, `videoUrl`, `allowDownload`, `requiresPassword`, `createdAt`.
+- [x] **(3.9c)** Create `src/share/share.controller.ts`:
   - **Authenticated** (`projects/:projectId/share`): `POST /` → create share link.
   - **Public** (`shared`): `GET /:token` → `accessSharedProject()`, decorated with `@Public()`.
   - Guard creation behind `FEATURE_SHARE_ENABLED` flag.
-- [ ] **(3.10)** Create `src/share/share.module.ts`: declare `ShareController`, provide `ShareService`, import `PrismaModule` and `ProjectModule`. Export `ShareService`.
+- [x] **(3.10)** Create `src/share/share.module.ts`: declare `ShareController`, provide `ShareService`, import `PrismaModule` and `ProjectModule`. Export `ShareService`.
   - Import `ShareModule` in `src/app.module.ts`.
 
 #### Agent: `integration` — "workflow-extensions"
 
-- [ ] **(3.5)** Add `cancelWorkflow(projectId, versionId, userId)` to `WorkflowService`:
+- [x] **(3.5)** Add `cancelWorkflow(projectId, versionId, userId)` to `WorkflowService`:
   1. Verify ownership.
   2. Load execution, verify `running`.
   3. Verify version status is `analyzing` or `generating`. Throw `ConflictException` if not cancellable.
@@ -531,7 +531,7 @@ Sequential: 3.8 → 3.9 → 3.10
   7. Update `ProjectVersion.status` to `cancelled`.
   8. Publish `workflow.cancelled` NATS event.
   - Add `POST /cancel` endpoint to `WorkflowController`: return `200`.
-- [ ] **(3.6)** Add `retryWorkflow(projectId, versionId, userId)` to `WorkflowService`:
+- [x] **(3.6)** Add `retryWorkflow(projectId, versionId, userId)` to `WorkflowService`:
   1. Verify ownership.
   2. Verify version status `failed`. Throw `ConflictException` otherwise.
   3. Check retry count against `maxRetries`. Throw `BadRequestException` if exceeded.
@@ -540,7 +540,7 @@ Sequential: 3.8 → 3.9 → 3.10
   6. Update `ProjectVersion.status` to `analyzing`.
   7. Enqueue BullMQ job from the failed step.
   - Add `POST /retry` endpoint to `WorkflowController`: return `202`.
-- [ ] **(3.7a)** Create `src/workflow/workflow.sse.controller.ts`:
+- [x] **(3.7a)** Create `src/workflow/workflow.sse.controller.ts`:
   - `GET /progress/stream` — `@Sse()` returning `Observable<MessageEvent>`:
     1. Verify ownership.
     2. Emit initial state snapshot.
@@ -548,59 +548,59 @@ Sequential: 3.8 → 3.9 → 3.10
     4. On update → emit SSE event.
     5. On terminal state → complete Observable.
     6. Guard with `FEATURE_SSE_ENABLED`.
-- [ ] **(3.7b)** Update `WorkflowService` to emit events via `EventEmitter2` on progress updates, step completions, and terminal states.
-- [ ] **(3.7c)** Register `WorkflowSSEController` in `WorkflowModule`. Add `active_sse_connections` metric.
-- [ ] **(3.11a)** Create `src/clients/notification-service.client.ts`: method `sendNotification({ userId, type, data })`: `POST .../notifications/send`. Retry 3×. **On failure: log warning but do NOT throw** (best-effort).
-- [ ] **(3.11b)** Integrate into `WorkflowService`: on `completeWorkflow()` → send `generation_completed`; on `failWorkflow()` (retries exhausted) → send `generation_failed`.
-- [ ] **(3.12)** Harden NATS subscriber handlers:
+- [x] **(3.7b)** Update `WorkflowService` to emit events via `EventEmitter2` on progress updates, step completions, and terminal states.
+- [x] **(3.7c)** Register `WorkflowSSEController` in `WorkflowModule`. Add `active_sse_connections` metric.
+- [x] **(3.11a)** Create `src/clients/notification-service.client.ts`: method `sendNotification({ userId, type, data })`: `POST .../notifications/send`. Retry 3×. **On failure: log warning but do NOT throw** (best-effort).
+- [x] **(3.11b)** Integrate into `WorkflowService`: on `completeWorkflow()` → send `generation_completed`; on `failWorkflow()` (retries exhausted) → send `generation_failed`.
+- [x] **(3.12)** Harden NATS subscriber handlers:
   - Validate all incoming payloads with Zod schemas. Nak invalid payloads.
   - Handle idempotency (skip duplicate `image.completed` for same scene).
   - Use Prisma transactions for multi-record updates.
   - Log each message at `info` with `{ subject, executionId, correlationId }`.
   - Implement dead-letter handling: log poison messages at `error`.
-- [ ] **(3.15a)** Verify `LoggingInterceptor` extracts `X-Request-Id` and generates UUID if absent. Store as `correlationId` via `AsyncLocalStorage` or NestJS request scope.
-- [ ] **(3.15b)** Update `UserServiceClient`: include `{ 'X-Request-Id': correlationId }` in all requests.
-- [ ] **(3.15c)** Update `StorageServiceClient`: include `X-Request-Id`.
-- [ ] **(3.15d)** Update `NotificationServiceClient`: include `X-Request-Id`.
-- [ ] **(3.15e)** Verify `NatsPublisher` populates `correlationId` in every event payload.
-- [ ] **(3.15f)** Verify Pino logs include `correlationId` on every log line.
-- [ ] **(3.16a)** Ensure `app.enableShutdownHooks()` in `main.ts`.
-- [ ] **(3.16b)** Implement `onModuleDestroy()` in `MessagingModule`: drain NATS subscriptions, close connection.
-- [ ] **(3.16c)** Implement `onModuleDestroy()` in `WorkflowProcessor`: close BullMQ workers (`worker.close()`), close queue connections.
-- [ ] **(3.16d)** Implement `onModuleDestroy()` in `PrismaService`: `$disconnect()`.
-- [ ] **(3.16e)** Implement `onModuleDestroy()` for Redis connections.
-- [ ] **(3.16f)** Test shutdown on `SIGTERM`: verify order — stop HTTP → drain BullMQ → drain NATS → disconnect Prisma → close Redis → exit.
+- [x] **(3.15a)** Verify `LoggingInterceptor` extracts `X-Request-Id` and generates UUID if absent. Store as `correlationId` via `AsyncLocalStorage` or NestJS request scope.
+- [x] **(3.15b)** Update `UserServiceClient`: include `{ 'X-Request-Id': correlationId }` in all requests.
+- [x] **(3.15c)** Update `StorageServiceClient`: include `X-Request-Id`.
+- [x] **(3.15d)** Update `NotificationServiceClient`: include `X-Request-Id`.
+- [x] **(3.15e)** Verify `NatsPublisher` populates `correlationId` in every event payload.
+- [x] **(3.15f)** Verify Pino logs include `correlationId` on every log line.
+- [x] **(3.16a)** Ensure `app.enableShutdownHooks()` in `main.ts`.
+- [x] **(3.16b)** Implement `onModuleDestroy()` in `MessagingModule`: drain NATS subscriptions, close connection.
+- [x] **(3.16c)** Implement `onModuleDestroy()` in `WorkflowProcessor`: close BullMQ workers (`worker.close()`), close queue connections.
+- [x] **(3.16d)** Implement `onModuleDestroy()` in `PrismaService`: `$disconnect()`.
+- [x] **(3.16e)** Implement `onModuleDestroy()` for Redis connections.
+- [x] **(3.16f)** Test shutdown on `SIGTERM`: verify order — stop HTTP → drain BullMQ → drain NATS → disconnect Prisma → close Redis → exit.
 
 #### Agent: `database` — "full-text-search"
 
-- [ ] **(3.1a)** Create Prisma migration adding PostgreSQL full-text search:
+- [x] **(3.1a)** Create Prisma migration adding PostgreSQL full-text search:
   - Add `tsvector` generated column on `Project` (from `title`).
   - Add `tsvector` generated column on `ProjectContent` (from `text`).
   - Create GIN indexes on both columns.
-- [ ] **(3.1b)** Add `search(userId, query, pagination)` to `ProjectService`:
+- [x] **(3.1b)** Add `search(userId, query, pagination)` to `ProjectService`:
   - Use `$queryRaw` for full-text search with `plainto_tsquery` + `ts_rank`.
   - Join `Project` with `ProjectContent`.
   - Filter by `userId` and `deletedAt IS NULL`.
   - Apply pagination (LIMIT/OFFSET). Return `PaginatedResponse`.
-- [ ] **(3.1c)** Add `GET /search` endpoint to `ProjectController`: accept `q` (string, min 1, required) + pagination params. Guard with `FEATURE_SEARCH_ENABLED`. Return `200`.
+- [x] **(3.1c)** Add `GET /search` endpoint to `ProjectController`: accept `q` (string, min 1, required) + pagination params. Guard with `FEATURE_SEARCH_ENABLED`. Return `200`.
 
 #### Agent: `devops` — "observability-infra"
 
-- [ ] **(3.13a)** Create metrics service/module using `prom-client`. Initialize `collectDefaultMetrics()`. Define custom metrics:
+- [x] **(3.13a)** Create metrics service/module using `prom-client`. Initialize `collectDefaultMetrics()`. Define custom metrics:
   - `http_requests_total` (Counter), `http_request_duration_seconds` (Histogram).
   - `workflow_executions_total` (Counter), `workflow_duration_seconds` (Histogram), `workflow_step_duration_seconds` (Histogram).
   - `bullmq_jobs_active` (Gauge), `bullmq_jobs_waiting` (Gauge), `bullmq_jobs_failed_total` (Counter).
   - `nats_messages_published_total` (Counter), `nats_messages_received_total` (Counter).
   - `prisma_query_duration_seconds` (Histogram), `active_sse_connections` (Gauge).
-- [ ] **(3.13b)** Create `GET /metrics` endpoint (`@Public()`) returning Prometheus exposition format.
-- [ ] **(3.13c)** Create `MetricsInterceptor` incrementing `http_requests_total` + observing duration. Register globally.
-- [ ] **(3.13d)** Instrument `NatsPublisher` and `NatsSubscriber` with counters.
-- [ ] **(3.13e)** Instrument `WorkflowService` with duration/count metrics.
-- [ ] **(3.13f)** Instrument BullMQ: periodic queue count polling (every 10s).
-- [ ] **(3.13g)** Instrument Prisma: middleware for `prisma_query_duration_seconds`.
-- [ ] **(3.17a)** Create `helm/values-dev.yaml`: `replicaCount: 1`, `hpa: { min: 1, max: 2 }`, reduced resources, `LOG_LEVEL: debug`, `SWAGGER_ENABLED: "true"`.
-- [ ] **(3.17b)** Create `helm/values-staging.yaml`: `replicaCount: 2`, `hpa: { min: 2, max: 5 }`, standard resources, `LOG_LEVEL: info`, `SWAGGER_ENABLED: "true"`.
-- [ ] **(3.17c)** Create `helm/values-prod.yaml`: `replicaCount: 3`, `hpa: { min: 3, max: 10 }`, full resources, `LOG_LEVEL: info`, `SWAGGER_ENABLED: "false"`.
+- [x] **(3.13b)** Create `GET /metrics` endpoint (`@Public()`) returning Prometheus exposition format.
+- [x] **(3.13c)** Create `MetricsInterceptor` incrementing `http_requests_total` + observing duration. Register globally.
+- [x] **(3.13d)** Instrument `NatsPublisher` and `NatsSubscriber` with counters.
+- [x] **(3.13e)** Instrument `WorkflowService` with duration/count metrics.
+- [x] **(3.13f)** Instrument BullMQ: periodic queue count polling (every 10s).
+- [x] **(3.13g)** Instrument Prisma: middleware for `prisma_query_duration_seconds`.
+- [x] **(3.17a)** Create `helm/values-dev.yaml`: `replicaCount: 1`, `hpa: { min: 1, max: 2 }`, reduced resources, `LOG_LEVEL: debug`, `SWAGGER_ENABLED: "true"`.
+- [x] **(3.17b)** Create `helm/values-staging.yaml`: `replicaCount: 2`, `hpa: { min: 2, max: 5 }`, standard resources, `LOG_LEVEL: info`, `SWAGGER_ENABLED: "true"`.
+- [x] **(3.17c)** Create `helm/values-prod.yaml`: `replicaCount: 3`, `hpa: { min: 3, max: 10 }`, full resources, `LOG_LEVEL: info`, `SWAGGER_ENABLED: "false"`.
 
 ---
 
@@ -610,14 +610,14 @@ Sequential: 3.8 → 3.9 → 3.10
 
 #### Agent: `devops` — "swagger-docs"
 
-- [ ] **(3.14a)** Verify Swagger configured in `main.ts`: `DocumentBuilder().setTitle('core-project-service').setVersion('1.0').addApiKey({ type: 'apiKey', name: 'X-User-Id', in: 'header' }, 'gateway-auth').build()`.
-- [ ] **(3.14b)** Add `@ApiTags('Projects')` to `ProjectController`.
-- [ ] **(3.14c)** Add `@ApiTags('Content')` to `ContentController`.
-- [ ] **(3.14d)** Add `@ApiTags('Versions')` to `VersionController`.
-- [ ] **(3.14e)** Add `@ApiTags('Workflow')` to `WorkflowController` and `WorkflowSSEController`.
-- [ ] **(3.14f)** Add `@ApiTags('Sharing')` to `ShareController`.
-- [ ] **(3.14g)** Add `@ApiTags('Health')` to `HealthController`.
-- [ ] **(3.14h)** Verify all endpoints appear in `/api/docs` with correct schemas. Guard behind `SWAGGER_ENABLED`.
+- [x] **(3.14a)** Verify Swagger configured in `main.ts`: `DocumentBuilder().setTitle('core-project-service').setVersion('1.0').addApiKey({ type: 'apiKey', name: 'X-User-Id', in: 'header' }, 'gateway-auth').build()`.
+- [x] **(3.14b)** Add `@ApiTags('Projects')` to `ProjectController`.
+- [x] **(3.14c)** Add `@ApiTags('Content')` to `ContentController`.
+- [x] **(3.14d)** Add `@ApiTags('Versions')` to `VersionController`.
+- [x] **(3.14e)** Add `@ApiTags('Workflow')` to `WorkflowController` and `WorkflowSSEController`.
+- [x] **(3.14f)** Add `@ApiTags('Sharing')` to `ShareController`.
+- [x] **(3.14g)** Add `@ApiTags('Health')` to `HealthController`.
+- [x] **(3.14h)** Verify all endpoints appear in `/api/docs` with correct schemas. Guard behind `SWAGGER_ENABLED`.
 
 ---
 
@@ -627,30 +627,30 @@ Sequential: 3.8 → 3.9 → 3.10
 
 #### Agent: `testing` — "p2-unit-tests"
 
-- [ ] **(3.19a)** Create `test/unit/project/project-search.spec.ts`: mock `$queryRaw`. Tests: matching query, non-matching, pagination, feature flag disabled.
-- [ ] **(3.19b)** Create `test/unit/content/content-summary.spec.ts`: getSummary — returns summary, null when not analyzed.
-- [ ] **(3.19c)** Create `test/unit/content/scene-update.spec.ts`: updateScene — partial updates, 404 for non-existent, ownership verified.
-- [ ] **(3.19d)** Create `test/unit/content/characters.spec.ts`: listCharacters — returns characters, empty array.
-- [ ] **(3.19e)** Create `test/unit/workflow/workflow-cancel.spec.ts`: cancel transitions, removes jobs, publishes event, 409 when not cancellable.
-- [ ] **(3.19f)** Create `test/unit/workflow/workflow-retry.spec.ts`: retry creates new execution, skips completed steps, enqueues from failed step, 409 when not failed, max retries error.
-- [ ] **(3.19g)** Create `test/unit/workflow/workflow-sse.spec.ts`: SSE emits initial state, updates, closes on terminal, feature flag.
-- [ ] **(3.19h)** Create `test/unit/share/share.service.spec.ts`: create (token generation, record), access (valid, expired, password-protected).
-- [ ] **(3.19i)** Create `test/unit/clients/notification-service.client.spec.ts`: sendNotification — POST, retries, does NOT throw on exhaustion.
-- [ ] **(3.19j)** Create `test/unit/common/metrics.spec.ts`: interceptor increments counters, endpoint returns valid Prometheus format.
+- [x] **(3.19a)** Create `test/unit/project/project-search.spec.ts`: mock `$queryRaw`. Tests: matching query, non-matching, pagination, feature flag disabled.
+- [x] **(3.19b)** Create `test/unit/content/content-summary.spec.ts`: getSummary — returns summary, null when not analyzed.
+- [x] **(3.19c)** Create `test/unit/content/scene-update.spec.ts`: updateScene — partial updates, 404 for non-existent, ownership verified.
+- [x] **(3.19d)** Create `test/unit/content/characters.spec.ts`: listCharacters — returns characters, empty array.
+- [x] **(3.19e)** Create `test/unit/workflow/workflow-cancel.spec.ts`: cancel transitions, removes jobs, publishes event, 409 when not cancellable.
+- [x] **(3.19f)** Create `test/unit/workflow/workflow-retry.spec.ts`: retry creates new execution, skips completed steps, enqueues from failed step, 409 when not failed, max retries error.
+- [x] **(3.19g)** Create `test/unit/workflow/workflow-sse.spec.ts`: SSE emits initial state, updates, closes on terminal, feature flag.
+- [x] **(3.19h)** Create `test/unit/share/share.service.spec.ts`: create (token generation, record), access (valid, expired, password-protected).
+- [x] **(3.19i)** Create `test/unit/clients/notification-service.client.spec.ts`: sendNotification — POST, retries, does NOT throw on exhaustion.
+- [x] **(3.19j)** Create `test/unit/common/metrics.spec.ts`: interceptor increments counters, endpoint returns valid Prometheus format.
 
 #### Agent: `testing` — "e2e-tests"
 
-- [ ] **(3.18a)** Create `test/e2e/setup.ts`: bootstrap full NestJS app with testcontainers. Apply migrations. Return app + supertest agent.
-- [ ] **(3.18b)** Create test utility helpers:
+- [x] **(3.18a)** Create `test/e2e/setup.ts`: bootstrap full NestJS app with testcontainers. Apply migrations. Return app + supertest agent.
+- [x] **(3.18b)** Create test utility helpers:
   - `test/helpers/seed.ts`: factory functions `createTestProject()`, `createTestContent()`, `createTestScene()`, `createTestVersion()`, `createTestExecution()`.
   - `test/helpers/auth.ts`: `authenticatedRequest(agent, userId?)`, `unauthenticatedRequest(agent)`.
   - `test/helpers/nats.ts`: `publishMockEvent(subject, payload)`.
   - `test/helpers/bullmq.ts`: `waitForJobCompletion(queue, jobId, timeout?)`.
-- [ ] **(3.18c)** Create `test/e2e/project.e2e.spec.ts`: create → 201, get → 200, list → pagination, update → 200, delete → 204 + subsequent GET → 404, no X-User-Id → 401, wrong user → 404, invalid body → 400, invalid UUID → 400.
-- [ ] **(3.18d)** Create `test/e2e/content.e2e.spec.ts`: get → 200, update text → wordCount recalculated, list scenes → ordered, no scenes → empty array.
-- [ ] **(3.18e)** Create `test/e2e/version.e2e.spec.ts`: create → 201 versionNumber=1, second → versionNumber=2, list → descending, get with executions → 200.
-- [ ] **(3.18f)** Create `test/e2e/workflow.e2e.spec.ts`: start → 202, poll status → 200 with progress, simulate analysis complete via NATS → verify scenes/characters, full pipeline end-to-end, no content → 400, no quota → 403.
-- [ ] **(3.18g)** Create `test/e2e/share.e2e.spec.ts`: create → 201, access via token → 200, expired → 404, invalid → 404, password-protected → requiresPassword.
+- [x] **(3.18c)** Create `test/e2e/project.e2e.spec.ts`: create → 201, get → 200, list → pagination, update → 200, delete → 204 + subsequent GET → 404, no X-User-Id → 401, wrong user → 404, invalid body → 400, invalid UUID → 400.
+- [x] **(3.18d)** Create `test/e2e/content.e2e.spec.ts`: get → 200, update text → wordCount recalculated, list scenes → ordered, no scenes → empty array.
+- [x] **(3.18e)** Create `test/e2e/version.e2e.spec.ts`: create → 201 versionNumber=1, second → versionNumber=2, list → descending, get with executions → 200.
+- [x] **(3.18f)** Create `test/e2e/workflow.e2e.spec.ts`: start → 202, poll status → 200 with progress, simulate analysis complete via NATS → verify scenes/characters, full pipeline end-to-end, no content → 400, no quota → 403.
+- [x] **(3.18g)** Create `test/e2e/share.e2e.spec.ts`: create → 201, access via token → 200, expired → 404, invalid → 404, password-protected → requiresPassword.
 
 ---
 

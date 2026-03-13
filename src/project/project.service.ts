@@ -145,4 +145,54 @@ export class ProjectService {
 
     this.logger.log({ projectId, userId }, 'Project soft-deleted');
   }
+
+  async search(
+    userId: string,
+    query: string,
+    page: number = 1,
+    pageSize: number = 20,
+  ): Promise<PaginatedResponse<Project>> {
+    const offset = (page - 1) * pageSize;
+    const tsQuery = query.trim();
+
+    const items = await this.prisma.$queryRaw<Project[]>`
+      SELECT p."id", p."userId", p."title", p."status", p."sourceType", p."config", p."createdAt", p."updatedAt", p."deletedAt" FROM "Project" p
+      LEFT JOIN "ProjectContent" pc ON pc."projectId" = p.id
+      WHERE p."userId" = ${userId}
+        AND p."deletedAt" IS NULL
+        AND (
+          p."search_vector" @@ plainto_tsquery('english', ${tsQuery})
+          OR pc."search_vector" @@ plainto_tsquery('english', ${tsQuery})
+        )
+      ORDER BY GREATEST(
+        ts_rank(p."search_vector", plainto_tsquery('english', ${tsQuery})),
+        COALESCE(ts_rank(pc."search_vector", plainto_tsquery('english', ${tsQuery})), 0)
+      ) DESC
+      LIMIT ${pageSize}
+      OFFSET ${offset}
+    `;
+
+    const countResult = await this.prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(*)::bigint as count FROM "Project" p
+      LEFT JOIN "ProjectContent" pc ON pc."projectId" = p.id
+      WHERE p."userId" = ${userId}
+        AND p."deletedAt" IS NULL
+        AND (
+          p."search_vector" @@ plainto_tsquery('english', ${tsQuery})
+          OR pc."search_vector" @@ plainto_tsquery('english', ${tsQuery})
+        )
+    `;
+
+    const total = Number(countResult[0]?.count ?? 0);
+
+    this.logger.log({ userId, query: tsQuery, total }, 'Search executed');
+
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
 }

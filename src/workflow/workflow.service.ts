@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Inject,
   Logger,
   NotFoundException,
   ConflictException,
@@ -8,11 +9,16 @@ import {
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { createActor } from 'xstate';
 import { PrismaService } from '../common/database/prisma.service.js';
 import { NatsPublisher } from '../messaging/nats.publisher.js';
 import { ProjectService } from '../project/project.service.js';
 import { UserServiceClient } from '../clients/user-service.client.js';
+import { NotificationServiceClient } from '../clients/notification-service.client.js';
+import { APP_CONFIG } from '../common/config/app.config.js';
+import type { AppConfig } from '../common/config/app.config.js';
+import { MetricsService } from '../metrics/metrics.service.js';
 import { workflowMachine } from './workflow.machine.js';
 import { calculateProgress } from './workflow.progress.js';
 import { WORKFLOW_QUEUE_NAME, WorkflowJobName } from './workflow.types.js';
@@ -45,6 +51,10 @@ export class WorkflowService {
     private readonly natsPublisher: NatsPublisher,
     private readonly projectService: ProjectService,
     private readonly userServiceClient: UserServiceClient,
+    private readonly notificationClient: NotificationServiceClient,
+    private readonly metricsService: MetricsService,
+    private readonly eventEmitter: EventEmitter2,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
     @InjectQueue(WORKFLOW_QUEUE_NAME) private readonly workflowQueue: Queue<WorkflowJobData>,
   ) {}
 
@@ -169,6 +179,7 @@ export class WorkflowService {
       correlationId,
     });
 
+    this.metricsService.workflowExecutionsTotal.inc({ status: 'started' });
     this.logger.log(
       { projectId, versionId, executionId: execution.id, userId },
       'Workflow started',
@@ -221,6 +232,15 @@ export class WorkflowService {
       );
     }
 
+    // Remove pending BullMQ jobs for this execution
+    const pendingJobs = await this.workflowQueue.getJobs(['waiting', 'delayed']);
+    for (const job of pendingJobs) {
+      if (job.data.executionId === executionId) {
+        await job.remove();
+        this.logger.debug({ jobId: job.id, executionId }, 'Removed pending BullMQ job');
+      }
+    }
+
     await this.prisma.$transaction(async (tx) => {
       await tx.workflowExecution.update({
         where: { id: executionId },
@@ -250,7 +270,171 @@ export class WorkflowService {
       correlationId: correlationId ?? executionId,
     });
 
+    this.emitProgress(versionId, {
+      executionId,
+      status: 'cancelled',
+      currentStep: null,
+      progress: execution.progress,
+      steps: execution.steps.map((s) => ({
+        step: s.step,
+        status: ['pending', 'running'].includes(s.status) ? 'skipped' : s.status,
+        progress: s.progress,
+      })),
+    });
+
     this.logger.log({ projectId, versionId, executionId, userId }, 'Workflow cancelled');
+  }
+
+  async retryWorkflow(
+    projectId: string,
+    versionId: string,
+    userId: string,
+    correlationId: string,
+  ): Promise<WorkflowExecution & { steps: WorkflowStep[] }> {
+    await this.projectService.ensureOwnership(projectId, userId);
+
+    const latestExecution = await this.prisma.workflowExecution.findFirst({
+      where: { versionId, projectId },
+      orderBy: { startedAt: 'desc' },
+      include: { steps: true },
+    });
+
+    if (!latestExecution) {
+      throw new NotFoundException('No workflow execution found for this version');
+    }
+
+    if (latestExecution.status !== 'failed') {
+      throw new ConflictException(
+        `Cannot retry workflow: latest execution is in "${latestExecution.status}" status`,
+      );
+    }
+
+    // Check retry count
+    const executionCount = await this.prisma.workflowExecution.count({
+      where: { versionId },
+    });
+
+    const maxRetries = this.config.BULLMQ_MAX_RETRIES;
+    if (executionCount > maxRetries) {
+      throw new BadRequestException(
+        `Maximum retry count (${maxRetries}) exceeded for this version`,
+      );
+    }
+
+    // Determine which steps were completed and which need to be re-run
+    const completedSteps = new Set<string>(
+      latestExecution.steps.filter((s) => s.status === 'completed').map((s) => s.step as string),
+    );
+
+    // Find the first non-completed step
+    const firstPendingStep = PIPELINE_ORDER.find((step) => !completedSteps.has(step));
+    if (!firstPendingStep) {
+      throw new ConflictException('All steps were already completed');
+    }
+
+    // Find the first non-completed step that has a BullMQ job mapping
+    let startStep = firstPendingStep;
+    const startStepJob = STEP_TO_JOB[startStep];
+    if (!startStepJob) {
+      // If the step doesn't have a direct job (e.g. scene_extraction), find the next one that does
+      for (let i = PIPELINE_ORDER.indexOf(startStep); i < PIPELINE_ORDER.length; i++) {
+        const candidate = PIPELINE_ORDER[i];
+        if (candidate && STEP_TO_JOB[candidate]) {
+          startStep = candidate;
+          break;
+        }
+      }
+    }
+
+    // Determine version status based on start step
+    const versionStatus = PIPELINE_ORDER.indexOf(startStep) === 0 ? 'analyzing' : 'generating';
+
+    const execution = await this.prisma.$transaction(async (tx) => {
+      const exec = await tx.workflowExecution.create({
+        data: {
+          projectId,
+          versionId,
+          status: 'running',
+          currentStep: startStep,
+          progress: 0,
+          startedAt: new Date(),
+          steps: {
+            create: PIPELINE_ORDER.map((step) => ({
+              step: step as never,
+              status: completedSteps.has(step) ? ('completed' as const) : ('pending' as const),
+              progress: completedSteps.has(step) ? 100 : 0,
+              completedAt: completedSteps.has(step) ? new Date() : undefined,
+            })),
+          },
+        },
+        include: { steps: true },
+      });
+
+      await tx.projectVersion.update({
+        where: { id: versionId },
+        data: { status: versionStatus },
+      });
+
+      return exec;
+    });
+
+    const jobName = STEP_TO_JOB[startStep];
+    if (jobName) {
+      await this.workflowQueue.add(jobName, {
+        projectId,
+        versionId,
+        executionId: execution.id,
+        step: startStep,
+        correlationId,
+        userId,
+      });
+    }
+
+    await this.natsPublisher.publishWorkflowStarted({
+      projectId,
+      versionId,
+      executionId: execution.id,
+      userId,
+      config: {},
+      contentText: '',
+      sceneCount: 0,
+      timestamp: new Date().toISOString(),
+      correlationId,
+    });
+
+    this.logger.log(
+      { projectId, versionId, executionId: execution.id, userId, startStep },
+      'Workflow retry started',
+    );
+
+    return execution;
+  }
+
+  async getLatestExecution(
+    projectId: string,
+    versionId: string,
+    userId: string,
+  ): Promise<(WorkflowExecution & { steps: WorkflowStep[] }) | null> {
+    await this.projectService.ensureOwnership(projectId, userId);
+
+    return this.prisma.workflowExecution.findFirst({
+      where: { versionId, projectId },
+      orderBy: { startedAt: 'desc' },
+      include: { steps: true },
+    });
+  }
+
+  private emitProgress(
+    versionId: string,
+    payload: {
+      executionId: string;
+      status: string;
+      currentStep: string | null;
+      progress: number;
+      steps: Array<{ step: string; status: string; progress: number }>;
+    },
+  ): void {
+    this.eventEmitter.emit(`workflow.progress.${versionId}`, payload);
   }
 
   async handleStepCompleted(
@@ -365,6 +549,32 @@ export class WorkflowService {
         correlationId: executionId,
       });
 
+      this.emitProgress(execution.versionId, {
+        executionId,
+        status: 'completed',
+        currentStep: null,
+        progress: 100,
+        steps: execution.steps.map((s) => ({
+          step: s.step,
+          status: s.step === step ? 'completed' : s.status,
+          progress: s.step === step ? 100 : s.progress,
+        })),
+      });
+
+      // Send best-effort notification
+      const project = await this.prisma.project.findUnique({
+        where: { id: execution.projectId },
+        select: { userId: true },
+      });
+      if (project) {
+        void this.notificationClient.sendNotification({
+          userId: project.userId,
+          type: 'generation_completed',
+          data: { projectId: execution.projectId, versionId: execution.versionId },
+        });
+      }
+
+      this.metricsService.workflowExecutionsTotal.inc({ status: 'completed' });
       this.logger.log({ executionId }, 'Workflow completed');
     }
 
@@ -386,6 +596,18 @@ export class WorkflowService {
       await this.prisma.workflowExecution.update({
         where: { id: executionId },
         data: { progress },
+      });
+
+      this.emitProgress(updatedExecution.versionId, {
+        executionId,
+        status: updatedExecution.status,
+        currentStep: updatedExecution.currentStep,
+        progress,
+        steps: updatedExecution.steps.map((s) => ({
+          step: s.step,
+          status: s.status,
+          progress: s.progress,
+        })),
       });
     }
 
@@ -448,6 +670,32 @@ export class WorkflowService {
       correlationId: executionId,
     });
 
+    this.emitProgress(execution.versionId, {
+      executionId,
+      status: 'failed',
+      currentStep: step,
+      progress: execution.progress,
+      steps: execution.steps.map((s) => ({
+        step: s.step,
+        status: s.step === step ? 'failed' : s.status,
+        progress: s.progress,
+      })),
+    });
+
+    // Send best-effort notification
+    const project = await this.prisma.project.findUnique({
+      where: { id: execution.projectId },
+      select: { userId: true },
+    });
+    if (project) {
+      void this.notificationClient.sendNotification({
+        userId: project.userId,
+        type: 'generation_failed',
+        data: { projectId: execution.projectId, versionId: execution.versionId, error },
+      });
+    }
+
+    this.metricsService.workflowExecutionsTotal.inc({ status: 'failed' });
     this.logger.log({ executionId, step, error }, 'Step failed');
   }
 
@@ -480,6 +728,18 @@ export class WorkflowService {
     await this.prisma.workflowExecution.update({
       where: { id: executionId },
       data: { progress: overallProgress },
+    });
+
+    this.emitProgress(execution.versionId, {
+      executionId,
+      status: execution.status,
+      currentStep: execution.currentStep,
+      progress: overallProgress,
+      steps: execution.steps.map((s) => ({
+        step: s.step,
+        status: s.step === step ? 'running' : s.status,
+        progress: s.step === step ? progress : s.progress,
+      })),
     });
   }
 }

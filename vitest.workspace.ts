@@ -1,4 +1,5 @@
 import { defineWorkspace } from 'vitest/config';
+import swc from 'unplugin-swc';
 
 export default defineWorkspace([
   {
@@ -20,6 +21,7 @@ export default defineWorkspace([
     },
   },
   {
+    plugins: [swc.vite({ module: { type: 'es6' } })],
     test: {
       name: 'e2e',
       include: ['test/e2e/**/*.e2e.spec.ts'],

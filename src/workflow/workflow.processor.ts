@@ -1,16 +1,51 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
+import { Processor, WorkerHost, OnWorkerEvent, InjectQueue } from '@nestjs/bullmq';
+import { Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Job, Queue } from 'bullmq';
 import { NatsPublisher } from '../messaging/nats.publisher.js';
+import { MetricsService } from '../metrics/metrics.service.js';
 import { WORKFLOW_QUEUE_NAME, WorkflowJobName } from './workflow.types.js';
 import type { WorkflowJobData } from './workflow.types.js';
 
-@Processor(WORKFLOW_QUEUE_NAME)
-export class WorkflowProcessor extends WorkerHost {
-  private readonly logger = new Logger(WorkflowProcessor.name);
+const POLL_INTERVAL_MS = 10_000;
 
-  constructor(private readonly natsPublisher: NatsPublisher) {
+@Processor(WORKFLOW_QUEUE_NAME)
+export class WorkflowProcessor extends WorkerHost implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(WorkflowProcessor.name);
+  private pollTimer: ReturnType<typeof setInterval> | undefined;
+
+  constructor(
+    private readonly natsPublisher: NatsPublisher,
+    private readonly metricsService: MetricsService,
+    @InjectQueue(WORKFLOW_QUEUE_NAME) private readonly queue: Queue<WorkflowJobData>,
+  ) {
     super();
+  }
+
+  onModuleInit(): void {
+    this.pollTimer = setInterval(() => void this.pollQueueCounts(), POLL_INTERVAL_MS);
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+    }
+    if (this.worker) {
+      await this.worker.close();
+      this.logger.log('BullMQ worker closed');
+    }
+  }
+
+  private async pollQueueCounts(): Promise<void> {
+    try {
+      const [active, waiting] = await Promise.all([
+        this.queue.getActiveCount(),
+        this.queue.getWaitingCount(),
+      ]);
+      this.metricsService.bullmqJobsActive.set({ queue: WORKFLOW_QUEUE_NAME }, active);
+      this.metricsService.bullmqJobsWaiting.set({ queue: WORKFLOW_QUEUE_NAME }, waiting);
+    } catch {
+      // Silently skip if Redis is unavailable
+    }
   }
 
   async process(job: Job<WorkflowJobData>): Promise<void> {
@@ -43,6 +78,7 @@ export class WorkflowProcessor extends WorkerHost {
 
   @OnWorkerEvent('failed')
   onFailed(job: Job<WorkflowJobData>, error: Error): void {
+    this.metricsService.bullmqJobsFailedTotal.inc({ queue: WORKFLOW_QUEUE_NAME });
     this.logger.error(
       { jobName: job.name, jobId: job.id, error: error.message },
       'Workflow job failed',

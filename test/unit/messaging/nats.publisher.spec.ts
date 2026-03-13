@@ -3,7 +3,10 @@ import { SUBJECTS } from '../../../src/messaging/subjects.js';
 
 function createPublisher() {
   const mockConfig = { NATS_URL: 'nats://localhost:4222', NATS_USER: '', NATS_PASSWORD: '' };
-  const publisher = new NatsPublisher(mockConfig as never);
+  const mockMetricsService = {
+    natsMessagesPublishedTotal: { inc: vi.fn() },
+  };
+  const publisher = new NatsPublisher(mockConfig as never, mockMetricsService as never);
 
   const mockJs = { publish: vi.fn().mockResolvedValue({ stream: 'test', seq: 1 }) };
   const mockNc = {

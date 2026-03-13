@@ -13,6 +13,8 @@ import { WorkflowModule } from './workflow/workflow.module.js';
 import { ProjectModule } from './project/project.module.js';
 import { ContentModule } from './content/content.module.js';
 import { VersionModule } from './version/version.module.js';
+import { ShareModule } from './share/share.module.js';
+import { MetricsModule } from './metrics/metrics.module.js';
 
 @Module({
   imports: [
@@ -50,6 +52,8 @@ import { VersionModule } from './version/version.module.js';
     ProjectModule,
     ContentModule,
     VersionModule,
+    ShareModule,
+    MetricsModule,
   ],
   providers: [
     {

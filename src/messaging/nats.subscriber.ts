@@ -9,74 +9,88 @@ import {
   type JetStreamClient,
   type JetStreamManager,
   type ConsumerMessages,
+  type JsMsg,
 } from 'nats';
+import { z } from 'zod';
 import { APP_CONFIG } from '../common/config/app.config.js';
 import type { AppConfig } from '../common/config/app.config.js';
+import { PrismaService } from '../common/database/prisma.service.js';
+import { MetricsService } from '../metrics/metrics.service.js';
 import { STREAM_NAME, CONSUMER_NAME, CONSUMER_FILTER, AI_SUBJECTS } from './subjects.js';
 import type { WorkflowService } from '../workflow/workflow.service.js';
 
-// --- Inbound event payload interfaces ---
+// --- Zod schemas for inbound event payloads ---
 
-export interface AnalysisCompletedEvent {
-  projectId: string;
-  versionId: string;
-  executionId: string;
-  userId: string;
-  scenes: unknown[];
-  characters: unknown[];
-  correlationId: string;
-}
+const AnalysisCompletedSchema = z.object({
+  projectId: z.string().uuid(),
+  versionId: z.string().uuid(),
+  executionId: z.string().uuid(),
+  userId: z.string(),
+  scenes: z.array(z.unknown()),
+  characters: z.array(z.unknown()),
+  correlationId: z.string(),
+});
 
-export interface AnalysisFailedEvent {
-  projectId: string;
-  versionId: string;
-  executionId: string;
-  userId: string;
-  error: string;
-  correlationId: string;
-}
+const AnalysisFailedSchema = z.object({
+  projectId: z.string().uuid(),
+  versionId: z.string().uuid(),
+  executionId: z.string().uuid(),
+  userId: z.string(),
+  error: z.string(),
+  correlationId: z.string(),
+});
 
-export interface MediaImageCompletedEvent {
-  projectId: string;
-  versionId: string;
-  executionId: string;
-  sceneId: string;
-  imageUrl: string;
-  correlationId: string;
-}
+const MediaImageCompletedSchema = z.object({
+  projectId: z.string().uuid(),
+  versionId: z.string().uuid(),
+  executionId: z.string().uuid(),
+  sceneId: z.string().uuid(),
+  imageUrl: z.string(),
+  correlationId: z.string(),
+});
 
-export interface MediaAudioCompletedEvent {
-  projectId: string;
-  versionId: string;
-  executionId: string;
-  audioUrl: string;
-  correlationId: string;
-}
+const MediaAudioCompletedSchema = z.object({
+  projectId: z.string().uuid(),
+  versionId: z.string().uuid(),
+  executionId: z.string().uuid(),
+  audioUrl: z.string(),
+  correlationId: z.string(),
+});
 
-export interface AssemblyCompletedEvent {
-  projectId: string;
-  versionId: string;
-  executionId: string;
-  videoUrl: string;
-  correlationId: string;
-}
+const AssemblyCompletedSchema = z.object({
+  projectId: z.string().uuid(),
+  versionId: z.string().uuid(),
+  executionId: z.string().uuid(),
+  videoUrl: z.string(),
+  correlationId: z.string(),
+});
 
-export interface AssemblyFailedEvent {
-  projectId: string;
-  versionId: string;
-  executionId: string;
-  error: string;
-  correlationId: string;
-}
+const AssemblyFailedSchema = z.object({
+  projectId: z.string().uuid(),
+  versionId: z.string().uuid(),
+  executionId: z.string().uuid(),
+  error: z.string(),
+  correlationId: z.string(),
+});
 
-export interface ProgressEvent {
-  projectId: string;
-  versionId: string;
-  executionId: string;
-  step: string;
-  progress: number;
-  correlationId: string;
-}
+const ProgressSchema = z.object({
+  projectId: z.string().uuid(),
+  versionId: z.string().uuid(),
+  executionId: z.string().uuid(),
+  step: z.string(),
+  progress: z.number().min(0).max(100),
+  correlationId: z.string(),
+});
+
+// --- Inbound event payload types (inferred from Zod) ---
+
+export type AnalysisCompletedEvent = z.infer<typeof AnalysisCompletedSchema>;
+export type AnalysisFailedEvent = z.infer<typeof AnalysisFailedSchema>;
+export type MediaImageCompletedEvent = z.infer<typeof MediaImageCompletedSchema>;
+export type MediaAudioCompletedEvent = z.infer<typeof MediaAudioCompletedSchema>;
+export type AssemblyCompletedEvent = z.infer<typeof AssemblyCompletedSchema>;
+export type AssemblyFailedEvent = z.infer<typeof AssemblyFailedSchema>;
+export type ProgressEvent = z.infer<typeof ProgressSchema>;
 
 @Injectable()
 export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
@@ -87,16 +101,25 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
   private sc = StringCodec();
   private running = true;
   private workflowService!: WorkflowService;
+  private metricsService: MetricsService | undefined;
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     private readonly moduleRef: ModuleRef,
+    private readonly prisma: PrismaService,
   ) {}
 
   async onModuleInit(): Promise<void> {
     // Lazily resolve WorkflowService to avoid circular dependency
     const { WorkflowService: WfService } = await import('../workflow/workflow.service.js');
     this.workflowService = this.moduleRef.get(WfService, { strict: false });
+
+    // Resolve MetricsService (optional — graceful if not available)
+    try {
+      this.metricsService = this.moduleRef.get(MetricsService, { strict: false });
+    } catch {
+      // MetricsModule not loaded — metrics disabled
+    }
 
     // Connect in background so the app can start even if NATS is temporarily unavailable
     void this.connectWithRetry();
@@ -177,10 +200,17 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
         if (!this.running) break;
         try {
           const data = JSON.parse(this.sc.decode(msg.data)) as Record<string, unknown>;
-          await this.handleMessage(msg.subject, data);
+          this.metricsService?.natsMessagesReceivedTotal.inc({ subject: msg.subject });
+          await this.handleMessage(msg.subject, data, msg);
           msg.ack();
         } catch (error) {
-          this.logger.error({ subject: msg.subject, error }, 'Failed to process message');
+          const redeliveryCount = msg.info?.redeliveryCount;
+          this.logger.error(
+            { subject: msg.subject, error, redeliveryCount },
+            redeliveryCount !== undefined && redeliveryCount >= 4
+              ? 'Poison message — max redeliveries reached'
+              : 'Failed to process message',
+          );
           msg.nak();
         }
       }
@@ -191,51 +221,180 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async handleMessage(subject: string, data: Record<string, unknown>): Promise<void> {
-    const executionId = data.executionId as string;
-
+  private async handleMessage(
+    subject: string,
+    data: Record<string, unknown>,
+    msg: JsMsg,
+  ): Promise<void> {
     switch (subject) {
       case AI_SUBJECTS.ANALYSIS_COMPLETED: {
-        this.logger.log({ executionId }, 'Handling analysis completed');
-        await this.workflowService.handleStepCompleted(executionId, 'analysis', data);
+        const parsed = this.validatePayload(AnalysisCompletedSchema, data, subject, msg);
+        if (!parsed) return;
+        this.logger.log(
+          { subject, executionId: parsed.executionId, correlationId: parsed.correlationId },
+          'Handling analysis completed',
+        );
+        // Store scenes + characters + summary atomically via Prisma transaction
+        await this.prisma.$transaction(async (tx) => {
+          if (parsed.scenes.length > 0) {
+            for (let i = 0; i < parsed.scenes.length; i++) {
+              const scene = parsed.scenes[i] as Record<string, unknown>;
+              await tx.scene.upsert({
+                where: {
+                  projectId_order: {
+                    projectId: parsed.projectId,
+                    order: (scene.order as number) ?? i,
+                  },
+                },
+                update: {
+                  text: (scene.text as string) ?? '',
+                  description: (scene.description as string) ?? '',
+                  imagePrompt: (scene.imagePrompt as string) ?? '',
+                  duration: (scene.duration as number) ?? 0,
+                  sentiment: (scene.sentiment as string) ?? null,
+                },
+                create: {
+                  projectId: parsed.projectId,
+                  order: (scene.order as number) ?? i,
+                  text: (scene.text as string) ?? '',
+                  description: (scene.description as string) ?? '',
+                  imagePrompt: (scene.imagePrompt as string) ?? '',
+                  duration: (scene.duration as number) ?? 0,
+                  sentiment: (scene.sentiment as string) ?? null,
+                },
+              });
+            }
+          }
+          if (parsed.characters.length > 0) {
+            // Delete existing characters for the project before inserting new ones
+            await tx.character.deleteMany({ where: { projectId: parsed.projectId } });
+            for (const char of parsed.characters) {
+              const c = char as Record<string, unknown>;
+              await tx.character.create({
+                data: {
+                  projectId: parsed.projectId,
+                  name: (c.name as string) ?? '',
+                  description: (c.description as string) ?? '',
+                  aliases: (c.aliases as string[]) ?? [],
+                  traits: (c.traits as string[]) ?? [],
+                },
+              });
+            }
+          }
+        });
+        await this.workflowService.handleStepCompleted(parsed.executionId, 'analysis', data);
         break;
       }
       case AI_SUBJECTS.ANALYSIS_FAILED: {
-        this.logger.log({ executionId }, 'Handling analysis failed');
-        await this.workflowService.handleStepFailed(executionId, 'analysis', data.error as string);
+        const parsed = this.validatePayload(AnalysisFailedSchema, data, subject, msg);
+        if (!parsed) return;
+        this.logger.log(
+          { subject, executionId: parsed.executionId, correlationId: parsed.correlationId },
+          'Handling analysis failed',
+        );
+        await this.workflowService.handleStepFailed(parsed.executionId, 'analysis', parsed.error);
         break;
       }
       case AI_SUBJECTS.MEDIA_IMAGE_COMPLETED: {
-        this.logger.log({ executionId }, 'Handling media image completed');
-        await this.workflowService.handleStepCompleted(executionId, 'image_generation', data);
+        const parsed = this.validatePayload(MediaImageCompletedSchema, data, subject, msg);
+        if (!parsed) return;
+        this.logger.log(
+          { subject, executionId: parsed.executionId, correlationId: parsed.correlationId },
+          'Handling media image completed',
+        );
+        // Idempotency: check if scene already has generatedImageUrl set
+        const scene = await this.prisma.scene.findUnique({ where: { id: parsed.sceneId } });
+        if (scene?.generatedImageUrl) {
+          this.logger.log(
+            { sceneId: parsed.sceneId, executionId: parsed.executionId },
+            'Scene already has generatedImageUrl — skipping duplicate',
+          );
+          return;
+        }
+        await this.prisma.scene.update({
+          where: { id: parsed.sceneId },
+          data: { generatedImageUrl: parsed.imageUrl },
+        });
+        await this.workflowService.handleStepCompleted(
+          parsed.executionId,
+          'image_generation',
+          data,
+        );
         break;
       }
       case AI_SUBJECTS.MEDIA_AUDIO_COMPLETED: {
-        this.logger.log({ executionId }, 'Handling media audio completed');
-        await this.workflowService.handleStepCompleted(executionId, 'audio_generation', data);
+        const parsed = this.validatePayload(MediaAudioCompletedSchema, data, subject, msg);
+        if (!parsed) return;
+        this.logger.log(
+          { subject, executionId: parsed.executionId, correlationId: parsed.correlationId },
+          'Handling media audio completed',
+        );
+        await this.workflowService.handleStepCompleted(
+          parsed.executionId,
+          'audio_generation',
+          data,
+        );
         break;
       }
       case AI_SUBJECTS.ASSEMBLY_COMPLETED: {
-        this.logger.log({ executionId }, 'Handling assembly completed');
-        await this.workflowService.handleStepCompleted(executionId, 'assembly', data);
+        const parsed = this.validatePayload(AssemblyCompletedSchema, data, subject, msg);
+        if (!parsed) return;
+        this.logger.log(
+          { subject, executionId: parsed.executionId, correlationId: parsed.correlationId },
+          'Handling assembly completed',
+        );
+        await this.workflowService.handleStepCompleted(parsed.executionId, 'assembly', data);
         break;
       }
       case AI_SUBJECTS.ASSEMBLY_FAILED: {
-        this.logger.log({ executionId }, 'Handling assembly failed');
-        await this.workflowService.handleStepFailed(executionId, 'assembly', data.error as string);
+        const parsed = this.validatePayload(AssemblyFailedSchema, data, subject, msg);
+        if (!parsed) return;
+        this.logger.log(
+          { subject, executionId: parsed.executionId, correlationId: parsed.correlationId },
+          'Handling assembly failed',
+        );
+        await this.workflowService.handleStepFailed(parsed.executionId, 'assembly', parsed.error);
         break;
       }
       case AI_SUBJECTS.PROGRESS: {
-        this.logger.log({ executionId }, 'Handling progress update');
+        const parsed = this.validatePayload(ProgressSchema, data, subject, msg);
+        if (!parsed) return;
+        this.logger.log(
+          { subject, executionId: parsed.executionId, correlationId: parsed.correlationId },
+          'Handling progress update',
+        );
         await this.workflowService.handleProgressUpdate(
-          executionId,
-          data.step as string,
-          data.progress as number,
+          parsed.executionId,
+          parsed.step,
+          parsed.progress,
         );
         break;
       }
       default:
         this.logger.warn({ subject }, 'Unknown AI subject');
     }
+  }
+
+  /**
+   * Validate a message payload against a Zod schema.
+   * Returns the parsed data on success, or null on failure (after nak + log).
+   */
+  private validatePayload<T>(
+    schema: z.ZodType<T>,
+    data: Record<string, unknown>,
+    subject: string,
+    msg: JsMsg,
+  ): T | null {
+    const result = schema.safeParse(data);
+    if (!result.success) {
+      this.logger.error(
+        { subject, errors: result.error.issues, rawPayload: data },
+        'Inbound message failed Zod validation',
+      );
+      msg.nak();
+      // Throw to skip the ack() in the caller's try block
+      throw new Error(`Payload validation failed for ${subject}`);
+    }
+    return result.data;
   }
 }
