@@ -8,7 +8,7 @@ import { WorkflowService } from '../../../src/workflow/workflow.service.js';
 
 function createMocks() {
   const mockPrisma = {
-    project: { findFirst: vi.fn() },
+    project: { findFirst: vi.fn(), findUnique: vi.fn().mockResolvedValue({ userId: 'u1' }) },
     projectContent: { findUnique: vi.fn() },
     projectVersion: { findFirst: vi.fn(), update: vi.fn() },
     workflowExecution: {
@@ -41,6 +41,24 @@ function createMocks() {
 
   const mockQueue = {
     add: vi.fn().mockResolvedValue(undefined),
+    getJobs: vi.fn().mockResolvedValue([]),
+  };
+
+  const mockNotificationClient = {
+    sendNotification: vi.fn().mockResolvedValue(undefined),
+  };
+
+  const mockMetricsService = {
+    workflowExecutionsTotal: { inc: vi.fn() },
+  };
+
+  const mockEventEmitter = {
+    emit: vi.fn(),
+  };
+
+  const mockConfig = {
+    BULLMQ_MAX_RETRIES: 3,
+    FEATURE_SSE_ENABLED: true,
   };
 
   const service = new WorkflowService(
@@ -48,6 +66,10 @@ function createMocks() {
     mockNatsPublisher as never,
     mockProjectService as never,
     mockUserServiceClient as never,
+    mockNotificationClient as never,
+    mockMetricsService as never,
+    mockEventEmitter as never,
+    mockConfig as never,
     mockQueue as never,
   );
 
@@ -57,6 +79,9 @@ function createMocks() {
     mockNatsPublisher,
     mockProjectService,
     mockUserServiceClient,
+    mockNotificationClient,
+    mockEventEmitter,
+    mockConfig,
     mockQueue,
   };
 }

@@ -5,6 +5,7 @@ const REQUIRED_ENV = {
   REDIS_HOST: 'localhost',
   NATS_URL: 'nats://localhost:4222',
   USER_SERVICE_URL: 'http://localhost:8081',
+  NOTIFICATION_SERVICE_URL: 'http://localhost:8085',
 };
 
 describe('validateEnv', () => {

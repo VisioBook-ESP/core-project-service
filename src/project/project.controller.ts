@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, HttpCode, Inject, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { ProjectService } from './project.service.js';
@@ -6,11 +6,17 @@ import { CreateProjectDtoClass } from './dto/create-project.dto.js';
 import { UpdateProjectDtoClass } from './dto/update-project.dto.js';
 import { ProjectResponseDtoClass } from './dto/project-response.dto.js';
 import { ListProjectsQueryDtoClass } from './dto/list-projects-query.dto.js';
+import { SearchProjectsQueryDtoClass } from './dto/search-projects-query.dto.js';
+import { APP_CONFIG } from '../common/config/app.config.js';
+import type { AppConfig } from '../common/config/app.config.js';
 
 @ApiTags('Projects')
 @Controller('projects')
 export class ProjectController {
-  constructor(private readonly projectService: ProjectService) {}
+  constructor(
+    private readonly projectService: ProjectService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+  ) {}
 
   @Post()
   @HttpCode(201)
@@ -22,8 +28,19 @@ export class ProjectController {
 
   @Get()
   @ApiOperation({ summary: 'List projects for the current user' })
+  @ApiResponse({ status: 200, type: [ProjectResponseDtoClass] })
   async findAll(@CurrentUser() userId: string, @Query() query: ListProjectsQueryDtoClass) {
     return this.projectService.findAllByUser(userId, query);
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: 'Search projects by text' })
+  @ApiResponse({ status: 200 })
+  async search(@CurrentUser() userId: string, @Query() query: SearchProjectsQueryDtoClass) {
+    if (!this.config.FEATURE_SEARCH_ENABLED) {
+      throw new NotFoundException('Search is not available');
+    }
+    return this.projectService.search(userId, query.q, query.page, query.pageSize);
   }
 
   @Get(':id')

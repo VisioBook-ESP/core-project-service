@@ -1,3 +1,4 @@
+// Shutdown order: HTTP server → BullMQ workers → NATS consumers → Prisma → exit
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';

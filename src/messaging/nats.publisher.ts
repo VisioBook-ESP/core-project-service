@@ -12,6 +12,7 @@ import {
 } from 'nats';
 import { APP_CONFIG } from '../common/config/app.config.js';
 import type { AppConfig } from '../common/config/app.config.js';
+import { MetricsService } from '../metrics/metrics.service.js';
 import { STREAM_NAME, STREAM_SUBJECTS, SUBJECTS } from './subjects.js';
 
 // --- Outbound event payload interfaces ---
@@ -88,7 +89,10 @@ export class NatsPublisher implements OnModuleInit, OnModuleDestroy {
   private sc = StringCodec();
   private connected = false;
 
-  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
+  constructor(
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly metricsService: MetricsService,
+  ) {}
 
   async onModuleInit(): Promise<void> {
     // Connect in background so the app can start even if NATS is temporarily unavailable
@@ -165,6 +169,7 @@ export class NatsPublisher implements OnModuleInit, OnModuleDestroy {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         await this.js.publish(subject, data);
+        this.metricsService.natsMessagesPublishedTotal.inc({ subject });
         this.logger.debug({ subject }, 'Published message');
         return;
       } catch (error) {

@@ -5,6 +5,7 @@ import type { AppConfig } from '../common/config/app.config.js';
 import { NatsPublisher } from './nats.publisher.js';
 import { NatsSubscriber } from './nats.subscriber.js';
 import { UserServiceClient } from '../clients/user-service.client.js';
+import { NotificationServiceClient } from '../clients/notification-service.client.js';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { UserServiceClient } from '../clients/user-service.client.js';
       }),
     }),
   ],
-  providers: [NatsPublisher, NatsSubscriber, UserServiceClient],
-  exports: [NatsPublisher, NatsSubscriber, UserServiceClient],
+  providers: [NatsPublisher, NatsSubscriber, UserServiceClient, NotificationServiceClient],
+  exports: [NatsPublisher, NatsSubscriber, UserServiceClient, NotificationServiceClient],
 })
 export class MessagingModule {}
