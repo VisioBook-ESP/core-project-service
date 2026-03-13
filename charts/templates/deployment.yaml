@@ -34,6 +34,7 @@ spec:
       annotations:
         checksum/chart: {{ print (toYaml .Values) (.Files.Glob "**" | toString) | sha256sum | quote }}
         sidecar.istio.io/inject: "{{ .Values.istio.injection }}"
+        traffic.sidecar.istio.io/excludeOutboundPorts: "4222"
     spec:
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 30 }}
       containers:
