@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Inject, HttpCode, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Inject,
+  HttpCode,
+  NotFoundException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { APP_CONFIG } from '../common/config/app.config.js';
 import type { AppConfig } from '../common/config/app.config.js';
@@ -42,9 +51,7 @@ export class ShareController {
   @ApiOperation({ summary: 'Access a shared project by token' })
   @ApiParam({ name: 'token' })
   @ApiResponse({ status: 200, type: SharedProjectResponseDtoClass })
-  async accessSharedProject(
-    @Param('token') token: string,
-  ): Promise<SharedProjectResponseDtoClass> {
+  async accessSharedProject(@Param('token') token: string): Promise<SharedProjectResponseDtoClass> {
     this.ensureShareEnabled();
     return this.shareService.accessSharedProject(token);
   }

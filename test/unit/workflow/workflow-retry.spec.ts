@@ -1,8 +1,4 @@
-import {
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
-} from '@nestjs/common';
+import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { WorkflowService } from '../../../src/workflow/workflow.service.js';
 
 function createMocks() {
@@ -202,18 +198,14 @@ describe('WorkflowService.retryWorkflow', () => {
       steps: [],
     });
 
-    await expect(service.retryWorkflow('p1', 'v1', 'u1', 'c1')).rejects.toThrow(
-      ConflictException,
-    );
+    await expect(service.retryWorkflow('p1', 'v1', 'u1', 'c1')).rejects.toThrow(ConflictException);
   });
 
   it('should throw NotFoundException when no execution exists', async () => {
     const { service, mockPrisma } = createMocks();
     mockPrisma.workflowExecution.findFirst.mockResolvedValue(null);
 
-    await expect(service.retryWorkflow('p1', 'v1', 'u1', 'c1')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(service.retryWorkflow('p1', 'v1', 'u1', 'c1')).rejects.toThrow(NotFoundException);
   });
 
   it('should throw BadRequestException when max retries exceeded', async () => {

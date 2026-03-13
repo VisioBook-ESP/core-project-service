@@ -37,9 +37,7 @@ describe('ProjectService.search', () => {
       { id: 'p1', userId: 'u1', title: 'Machine Learning Intro' },
       { id: 'p2', userId: 'u1', title: 'Deep Learning Guide' },
     ];
-    mockPrisma.$queryRaw
-      .mockResolvedValueOnce(items)
-      .mockResolvedValueOnce([{ count: BigInt(2) }]);
+    mockPrisma.$queryRaw.mockResolvedValueOnce(items).mockResolvedValueOnce([{ count: BigInt(2) }]);
 
     const result = await service.search('u1', 'learning');
 
@@ -52,9 +50,7 @@ describe('ProjectService.search', () => {
 
   it('should return empty results for non-matching query', async () => {
     const { service, mockPrisma } = createMocks();
-    mockPrisma.$queryRaw
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ count: BigInt(0) }]);
+    mockPrisma.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([{ count: BigInt(0) }]);
 
     const result = await service.search('u1', 'nonexistent');
 
@@ -81,9 +77,7 @@ describe('ProjectService.search', () => {
 
   it('should use default page and pageSize when not provided', async () => {
     const { service, mockPrisma } = createMocks();
-    mockPrisma.$queryRaw
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ count: BigInt(0) }]);
+    mockPrisma.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([{ count: BigInt(0) }]);
 
     const result = await service.search('u1', 'test');
 
@@ -93,9 +87,7 @@ describe('ProjectService.search', () => {
 
   it('should trim the query string', async () => {
     const { service, mockPrisma } = createMocks();
-    mockPrisma.$queryRaw
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ count: BigInt(0) }]);
+    mockPrisma.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([{ count: BigInt(0) }]);
 
     await service.search('u1', '  hello  ');
 
@@ -105,9 +97,7 @@ describe('ProjectService.search', () => {
 
   it('should handle count result with undefined gracefully', async () => {
     const { service, mockPrisma } = createMocks();
-    mockPrisma.$queryRaw
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+    mockPrisma.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
     const result = await service.search('u1', 'test');
 

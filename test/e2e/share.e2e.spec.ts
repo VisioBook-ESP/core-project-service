@@ -54,8 +54,7 @@ describe('ShareController (E2E)', () => {
     const project = await seedProject(ctx.prisma, { title: 'Shared Project' });
     const shareLink = await seedShareLink(ctx.prisma, project.id);
 
-    const res = await request(ctx.httpServer)
-      .get(`/api/v1/shared/${shareLink.shareToken}`);
+    const res = await request(ctx.httpServer).get(`/api/v1/shared/${shareLink.shareToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.title).toBe('Shared Project');
@@ -68,15 +67,13 @@ describe('ShareController (E2E)', () => {
       expiresAt: new Date(Date.now() - 86_400_000), // expired yesterday
     });
 
-    const res = await request(ctx.httpServer)
-      .get(`/api/v1/shared/${shareLink.shareToken}`);
+    const res = await request(ctx.httpServer).get(`/api/v1/shared/${shareLink.shareToken}`);
 
     expect(res.status).toBe(404);
   });
 
   it('GET /shared/:token — returns 404 for invalid token', async () => {
-    const res = await request(ctx.httpServer)
-      .get('/api/v1/shared/nonexistent-token');
+    const res = await request(ctx.httpServer).get('/api/v1/shared/nonexistent-token');
 
     expect(res.status).toBe(404);
   });

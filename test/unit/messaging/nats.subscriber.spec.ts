@@ -74,11 +74,7 @@ describe('NatsSubscriber', () => {
 
       await callHandleMessage(subscriber, AI_SUBJECTS.ANALYSIS_COMPLETED, data);
 
-      expect(mockWorkflowService.handleStepCompleted).toHaveBeenCalledWith(
-        UUID3,
-        'analysis',
-        data,
-      );
+      expect(mockWorkflowService.handleStepCompleted).toHaveBeenCalledWith(UUID3, 'analysis', data);
     });
 
     it('should store scenes and characters in analysis completed', async () => {
@@ -88,7 +84,9 @@ describe('NatsSubscriber', () => {
         versionId: UUID2,
         executionId: UUID3,
         userId: 'user-1',
-        scenes: [{ order: 0, text: 'Scene 1', description: 'Desc', imagePrompt: 'prompt', duration: 5 }],
+        scenes: [
+          { order: 0, text: 'Scene 1', description: 'Desc', imagePrompt: 'prompt', duration: 5 },
+        ],
         characters: [{ name: 'Hero', description: 'Main character' }],
         correlationId: CORR,
       };
@@ -189,11 +187,7 @@ describe('NatsSubscriber', () => {
 
       await callHandleMessage(subscriber, AI_SUBJECTS.ASSEMBLY_COMPLETED, data);
 
-      expect(mockWorkflowService.handleStepCompleted).toHaveBeenCalledWith(
-        UUID3,
-        'assembly',
-        data,
-      );
+      expect(mockWorkflowService.handleStepCompleted).toHaveBeenCalledWith(UUID3, 'assembly', data);
     });
 
     it('should route ASSEMBLY_FAILED to handleStepFailed with assembly step', async () => {

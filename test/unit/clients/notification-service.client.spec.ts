@@ -31,16 +31,11 @@ describe('NotificationServiceClient', () => {
       const { client, mockHttpService } = createClient();
       mockHttpService.post.mockReturnValue(of({ data: undefined }));
 
-      await client.sendNotification(
-        { userId: 'u1', type: 'test', data: {} },
-        'req-123',
-      );
+      await client.sendNotification({ userId: 'u1', type: 'test', data: {} }, 'req-123');
 
-      expect(mockHttpService.post).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Object),
-        { headers: { 'X-Request-Id': 'req-123' } },
-      );
+      expect(mockHttpService.post).toHaveBeenCalledWith(expect.any(String), expect.any(Object), {
+        headers: { 'X-Request-Id': 'req-123' },
+      });
     });
 
     it('should retry on failure and succeed on second attempt', async () => {
@@ -92,8 +87,8 @@ describe('NotificationServiceClient', () => {
       await client.sendNotification({ userId: 'u1', type: 'test', data: {} });
 
       // Retries 3 times, delays for attempt 1 and 2 (third attempt logs and returns)
-      expect(delays[0]).toBe(1000);  // BASE_DELAY * 2^0
-      expect(delays[1]).toBe(2000);  // BASE_DELAY * 2^1
+      expect(delays[0]).toBe(1000); // BASE_DELAY * 2^0
+      expect(delays[1]).toBe(2000); // BASE_DELAY * 2^1
       vi.restoreAllMocks();
     });
   });

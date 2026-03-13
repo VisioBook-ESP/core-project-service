@@ -35,9 +35,7 @@ describe('WorkflowController (E2E)', () => {
     const version = await seedVersion(ctx.prisma, project.id);
 
     const res = await request(ctx.httpServer)
-      .post(
-        `/api/v1/projects/${project.id}/versions/${version.id}/workflow/start`,
-      )
+      .post(`/api/v1/projects/${project.id}/versions/${version.id}/workflow/start`)
       .set(authHeaders())
       .send({});
 
@@ -55,17 +53,13 @@ describe('WorkflowController (E2E)', () => {
     const version = await seedVersion(ctx.prisma, project.id, {
       status: 'analyzing',
     });
-    const execution = await seedExecution(
-      ctx.prisma,
-      project.id,
-      version.id,
-      { status: 'running', currentStep: 'analysis' },
-    );
+    const execution = await seedExecution(ctx.prisma, project.id, version.id, {
+      status: 'running',
+      currentStep: 'analysis',
+    });
 
     const res = await request(ctx.httpServer)
-      .get(
-        `/api/v1/projects/${project.id}/versions/${version.id}/workflow/status/${execution.id}`,
-      )
+      .get(`/api/v1/projects/${project.id}/versions/${version.id}/workflow/status/${execution.id}`)
       .set(authHeaders());
 
     expect(res.status).toBe(200);
@@ -81,17 +75,13 @@ describe('WorkflowController (E2E)', () => {
     const version = await seedVersion(ctx.prisma, project.id, {
       status: 'analyzing',
     });
-    const execution = await seedExecution(
-      ctx.prisma,
-      project.id,
-      version.id,
-      { status: 'running', currentStep: 'analysis' },
-    );
+    const execution = await seedExecution(ctx.prisma, project.id, version.id, {
+      status: 'running',
+      currentStep: 'analysis',
+    });
 
     const res = await request(ctx.httpServer)
-      .post(
-        `/api/v1/projects/${project.id}/versions/${version.id}/workflow/cancel/${execution.id}`,
-      )
+      .post(`/api/v1/projects/${project.id}/versions/${version.id}/workflow/cancel/${execution.id}`)
       .set(authHeaders());
 
     expect(res.status).toBe(200);
@@ -102,17 +92,13 @@ describe('WorkflowController (E2E)', () => {
     const version = await seedVersion(ctx.prisma, project.id, {
       status: 'completed',
     });
-    const execution = await seedExecution(
-      ctx.prisma,
-      project.id,
-      version.id,
-      { status: 'completed', currentStep: null },
-    );
+    const execution = await seedExecution(ctx.prisma, project.id, version.id, {
+      status: 'completed',
+      currentStep: null,
+    });
 
     const res = await request(ctx.httpServer)
-      .post(
-        `/api/v1/projects/${project.id}/versions/${version.id}/workflow/cancel/${execution.id}`,
-      )
+      .post(`/api/v1/projects/${project.id}/versions/${version.id}/workflow/cancel/${execution.id}`)
       .set(authHeaders());
 
     expect(res.status).toBe(409);
@@ -132,9 +118,7 @@ describe('WorkflowController (E2E)', () => {
     });
 
     const res = await request(ctx.httpServer)
-      .post(
-        `/api/v1/projects/${project.id}/versions/${version.id}/workflow/retry/ignored-param`,
-      )
+      .post(`/api/v1/projects/${project.id}/versions/${version.id}/workflow/retry/ignored-param`)
       .set(authHeaders());
 
     expect(res.status).toBe(202);
@@ -147,17 +131,12 @@ describe('WorkflowController (E2E)', () => {
   it('GET .../workflow/status/:executionId — returns 404 for other user', async () => {
     const project = await seedProject(ctx.prisma, { userId: OTHER_USER_ID });
     const version = await seedVersion(ctx.prisma, project.id);
-    const execution = await seedExecution(
-      ctx.prisma,
-      project.id,
-      version.id,
-      { status: 'running' },
-    );
+    const execution = await seedExecution(ctx.prisma, project.id, version.id, {
+      status: 'running',
+    });
 
     const res = await request(ctx.httpServer)
-      .get(
-        `/api/v1/projects/${project.id}/versions/${version.id}/workflow/status/${execution.id}`,
-      )
+      .get(`/api/v1/projects/${project.id}/versions/${version.id}/workflow/status/${execution.id}`)
       .set(authHeaders(TEST_USER_ID));
 
     expect(res.status).toBe(404);

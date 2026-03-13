@@ -29,13 +29,9 @@ export class NotificationServiceClient {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         await firstValueFrom(
-          this.httpService.post(
-            `${this.baseUrl}/api/v1/notifications/send`,
-            payload,
-            {
-              headers: this.buildHeaders(requestId),
-            },
-          ),
+          this.httpService.post(`${this.baseUrl}/api/v1/notifications/send`, payload, {
+            headers: this.buildHeaders(requestId),
+          }),
         );
         this.logger.debug({ userId: payload.userId, type: payload.type }, 'Notification sent');
         return;

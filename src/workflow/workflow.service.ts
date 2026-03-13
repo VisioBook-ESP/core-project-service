@@ -323,9 +323,7 @@ export class WorkflowService {
 
     // Determine which steps were completed and which need to be re-run
     const completedSteps = new Set<string>(
-      latestExecution.steps
-        .filter((s) => s.status === 'completed')
-        .map((s) => s.step as string),
+      latestExecution.steps.filter((s) => s.status === 'completed').map((s) => s.step as string),
     );
 
     // Find the first non-completed step

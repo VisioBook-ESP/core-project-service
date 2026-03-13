@@ -2,11 +2,7 @@ import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { bootstrapE2E, cleanDatabase, type E2EContext } from './setup.js';
 import { authHeaders, TEST_USER_ID, OTHER_USER_ID } from '../helpers/auth.js';
-import {
-  seedProjectWithContent,
-  seedScenes,
-  seedCharacters,
-} from '../helpers/seed.js';
+import { seedProjectWithContent, seedScenes, seedCharacters } from '../helpers/seed.js';
 
 describe('ContentController (E2E)', () => {
   let ctx: E2EContext;

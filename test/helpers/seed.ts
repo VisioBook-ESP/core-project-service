@@ -63,7 +63,15 @@ export async function seedProjectWithContent(
 export interface SeedVersionOverrides {
   id?: string;
   versionNumber?: number;
-  status?: 'draft' | 'analyzing' | 'analyzed' | 'configuring' | 'generating' | 'completed' | 'failed' | 'cancelled';
+  status?:
+    | 'draft'
+    | 'analyzing'
+    | 'analyzed'
+    | 'configuring'
+    | 'generating'
+    | 'completed'
+    | 'failed'
+    | 'cancelled';
   config?: Record<string, unknown>;
   videoUrl?: string | null;
 }
@@ -80,8 +88,7 @@ export async function seedVersion(
         where: { projectId },
         _max: { versionNumber: true },
       })
-    )._max.versionNumber ?? 0) +
-      1;
+    )._max.versionNumber ?? 0) + 1;
 
   return prisma.projectVersion.create({
     data: {

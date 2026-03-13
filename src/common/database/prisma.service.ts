@@ -33,7 +33,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         const end = metrics.prismaQueryDuration.startTimer({ operation: 'query' });
         const result = (originalQuery as (...a: unknown[]) => unknown)(...args);
         if (result && typeof result === 'object' && 'then' in result) {
-          (result as Promise<unknown>).then(() => end(), () => end());
+          (result as Promise<unknown>).then(
+            () => end(),
+            () => end(),
+          );
         } else {
           end();
         }

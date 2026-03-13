@@ -66,7 +66,9 @@ describe('ContentService.updateScene', () => {
 
   it('should reject when ownership fails', async () => {
     const { service, mockProjectService } = createMocks();
-    mockProjectService.ensureOwnership.mockRejectedValue(new NotFoundException('Project not found'));
+    mockProjectService.ensureOwnership.mockRejectedValue(
+      new NotFoundException('Project not found'),
+    );
 
     await expect(
       service.updateScene('p1', 's1', 'wrong-user', { description: 'test' }),

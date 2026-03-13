@@ -154,9 +154,7 @@ describe('MetricsInterceptor', () => {
       result$.subscribe({ complete: () => resolve() });
     });
 
-    expect(incSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ path: '/metrics' }),
-    );
+    expect(incSpy).toHaveBeenCalledWith(expect.objectContaining({ path: '/metrics' }));
   });
 });
 

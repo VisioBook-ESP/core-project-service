@@ -71,9 +71,7 @@ describe('ProjectController (E2E)', () => {
     await seedProject(ctx.prisma, { userId: TEST_USER_ID, title: 'Proj B' });
     await seedProject(ctx.prisma, { userId: OTHER_USER_ID, title: 'Other' });
 
-    const res = await request(ctx.httpServer)
-      .get('/api/v1/projects')
-      .set(authHeaders());
+    const res = await request(ctx.httpServer).get('/api/v1/projects').set(authHeaders());
 
     expect(res.status).toBe(200);
     expect(res.body.items).toHaveLength(2);

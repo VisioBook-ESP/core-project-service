@@ -15,12 +15,7 @@ import { NotificationServiceClient } from '../../src/clients/notification-servic
 import { ZodValidationPipe } from '../../src/common/pipes/zod-validation.pipe.js';
 import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter.js';
 import { LoggingInterceptor } from '../../src/common/interceptors/logging.interceptor.js';
-import {
-  startPostgres,
-  startRedis,
-  startNats,
-  cleanDatabase,
-} from '../integration/setup.js';
+import { startPostgres, startRedis, startNats, cleanDatabase } from '../integration/setup.js';
 
 // ---- Mock types ----
 
@@ -136,7 +131,13 @@ export { cleanDatabase };
 
 async function applyFulltextMigration(connectionUrl: string): Promise<void> {
   const migrationSql = readFileSync(
-    join(process.cwd(), 'prisma', 'migrations', '20260313000000_add_fulltext_search', 'migration.sql'),
+    join(
+      process.cwd(),
+      'prisma',
+      'migrations',
+      '20260313000000_add_fulltext_search',
+      'migration.sql',
+    ),
     'utf-8',
   );
   const pool = new pg.Pool({ connectionString: connectionUrl });

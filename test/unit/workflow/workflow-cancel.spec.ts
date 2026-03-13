@@ -207,9 +207,7 @@ describe('WorkflowService.cancelWorkflow', () => {
     const { service, mockPrisma } = createMocks();
     mockPrisma.workflowExecution.findFirst.mockResolvedValue(null);
 
-    await expect(service.cancelWorkflow('p1', 'v1', 'e1', 'u1')).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(service.cancelWorkflow('p1', 'v1', 'e1', 'u1')).rejects.toThrow(NotFoundException);
   });
 
   it('should throw ConflictException when execution is not running (409)', async () => {
@@ -220,9 +218,7 @@ describe('WorkflowService.cancelWorkflow', () => {
       steps: [],
     });
 
-    await expect(service.cancelWorkflow('p1', 'v1', 'e1', 'u1')).rejects.toThrow(
-      ConflictException,
-    );
+    await expect(service.cancelWorkflow('p1', 'v1', 'e1', 'u1')).rejects.toThrow(ConflictException);
   });
 
   it('should throw ConflictException for already-cancelled execution', async () => {
@@ -233,8 +229,6 @@ describe('WorkflowService.cancelWorkflow', () => {
       steps: [],
     });
 
-    await expect(service.cancelWorkflow('p1', 'v1', 'e1', 'u1')).rejects.toThrow(
-      ConflictException,
-    );
+    await expect(service.cancelWorkflow('p1', 'v1', 'e1', 'u1')).rejects.toThrow(ConflictException);
   });
 });

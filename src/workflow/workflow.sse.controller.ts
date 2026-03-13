@@ -65,10 +65,7 @@ export class WorkflowSSEController {
 
     const eventName = `workflow.progress.${versionId}`;
 
-    this.logger.debug(
-      { projectId, versionId, executionId: execution.id },
-      'SSE stream started',
-    );
+    this.logger.debug({ projectId, versionId, executionId: execution.id }, 'SSE stream started');
 
     const progressEvents$: Observable<MessageEvent> = fromEvent<WorkflowProgressEvent>(
       this.eventEmitter,
@@ -76,16 +73,12 @@ export class WorkflowSSEController {
     ).pipe(
       takeWhile(
         (event) =>
-          event.status !== 'completed' &&
-          event.status !== 'failed' &&
-          event.status !== 'cancelled',
+          event.status !== 'completed' && event.status !== 'failed' && event.status !== 'cancelled',
         true, // include the terminal event
       ),
       map((event) => ({ data: event })),
     );
 
-    return progressEvents$.pipe(
-      startWith({ data: initialSnapshot } as MessageEvent),
-    );
+    return progressEvents$.pipe(startWith({ data: initialSnapshot } as MessageEvent));
   }
 }
