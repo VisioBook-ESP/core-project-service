@@ -16,7 +16,7 @@ const BASE_DELAY_MS = 1000;
 @Injectable()
 export class NotificationServiceClient {
   private readonly logger = new Logger(NotificationServiceClient.name);
-  private readonly baseUrl: string;
+  private readonly baseUrl: string | undefined;
 
   constructor(
     private readonly httpService: HttpService,
@@ -26,6 +26,10 @@ export class NotificationServiceClient {
   }
 
   async sendNotification(payload: SendNotificationPayload, requestId?: string): Promise<void> {
+    if (!this.baseUrl) {
+      this.logger.debug('NOTIFICATION_SERVICE_URL not configured — skipping notification');
+      return;
+    }
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         await firstValueFrom(
