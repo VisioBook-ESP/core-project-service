@@ -1,9 +1,4 @@
-import {
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { WorkflowService } from '../../../src/workflow/workflow.service.js';
 
 function createMocks() {
@@ -151,17 +146,34 @@ describe('WorkflowService', () => {
       );
     });
 
-    it('should throw ServiceUnavailableException when user service fails', async () => {
-      const { service, mockPrisma, mockUserServiceClient } = createMocks();
+    it('should gracefully continue when quota check fails', async () => {
+      const { service, mockPrisma, mockUserServiceClient, mockQueue, mockNatsPublisher } =
+        createMocks();
       mockPrisma.projectVersion.findFirst.mockResolvedValue({
         id: 'v1',
+        projectId: 'p1',
         status: 'draft',
+        config: {},
       });
       mockUserServiceClient.checkQuota.mockRejectedValue(new Error('connection refused'));
+      mockPrisma.projectContent.findUnique.mockResolvedValue({
+        projectId: 'p1',
+        text: 'hello world',
+      });
+      const execution = {
+        id: 'e1',
+        projectId: 'p1',
+        versionId: 'v1',
+        status: 'running',
+        steps: [],
+      };
+      mockPrisma.workflowExecution.create.mockResolvedValue(execution);
+      mockPrisma.projectVersion.update.mockResolvedValue({ status: 'analyzing' });
 
-      await expect(service.startWorkflow('p1', 'v1', 'u1', 'c1')).rejects.toThrow(
-        ServiceUnavailableException,
-      );
+      const result = await service.startWorkflow('p1', 'v1', 'u1', 'c1');
+      expect(result).toBe(execution);
+      expect(mockQueue.add).toHaveBeenCalled();
+      expect(mockNatsPublisher.publishWorkflowStarted).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when project has no content', async () => {

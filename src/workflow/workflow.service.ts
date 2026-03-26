@@ -5,7 +5,6 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
-  ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -80,15 +79,16 @@ export class WorkflowService {
       );
     }
 
-    let hasQuota = false;
+    let hasQuota = true;
     try {
       const quotaResult = await this.userServiceClient.checkQuota(userId, correlationId);
       hasQuota = quotaResult.hasQuota;
-    } catch (error) {
-      if (error instanceof ServiceUnavailableException) {
-        throw error;
-      }
-      throw new ServiceUnavailableException('Failed to check quota');
+    } catch {
+      this.logger.warn(
+        { userId, correlationId },
+        'Quota check unavailable — assuming unlimited quota',
+      );
+      hasQuota = true;
     }
 
     if (!hasQuota) {
