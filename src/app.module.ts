@@ -6,6 +6,7 @@ import { ConfigModule } from './common/config/config.module.js';
 import { APP_CONFIG } from './common/config/app.config.js';
 import type { AppConfig } from './common/config/app.config.js';
 import { PrismaModule } from './common/database/prisma.module.js';
+import { CacheModule } from './common/cache/cache.module.js';
 import { GatewayAuthGuard } from './common/guards/gateway-auth.guard.js';
 import { HealthModule } from './health/health.module.js';
 import { MessagingModule } from './messaging/messaging.module.js';
@@ -46,6 +47,7 @@ import { MetricsModule } from './metrics/metrics.module.js';
       }),
     }),
     PrismaModule,
+    CacheModule,
     HealthModule,
     MessagingModule,
     WorkflowModule,

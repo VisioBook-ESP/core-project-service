@@ -10,6 +10,7 @@ export const CreateShareLinkSchema = z.object({
       message: 'Expiration date must be in the future',
     }),
   allowDownload: z.boolean().optional().default(false),
+  password: z.string().min(8).optional(),
 });
 
 export type CreateShareLinkDto = z.infer<typeof CreateShareLinkSchema>;

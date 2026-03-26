@@ -666,40 +666,40 @@ Sequential: 3.8 → 3.9 → 3.10
 
 #### Agent: `backend` — "polish-features"
 
-- [ ] **(4.1a)** Update `src/share/dto/create-share-link.dto.ts`: add optional `password` field (string, min 8 if provided).
-- [ ] **(4.1b)** Update `ShareService.createShareLink()`: if `dto.password` provided, hash with `bcrypt` (work factor 12). Store hash. Return without password/hash.
-- [ ] **(4.2a)** Create `src/share/dto/verify-password.dto.ts`: Zod schema — `password` (string, required).
-- [ ] **(4.2b)** Add `verifySharePassword(token, password)` to `ShareService`:
+- [x] **(4.1a)** Update `src/share/dto/create-share-link.dto.ts`: add optional `password` field (string, min 8 if provided).
+- [x] **(4.1b)** Update `ShareService.createShareLink()`: if `dto.password` provided, hash with `bcrypt` (work factor 12). Store hash. Return without password/hash.
+- [x] **(4.2a)** Create `src/share/dto/verify-password.dto.ts`: Zod schema — `password` (string, required).
+- [x] **(4.2b)** Add `verifySharePassword(token, password)` to `ShareService`:
   1. Find `ShareLink`. Throw 404 if not found.
   2. Check expiration. Throw 404 if expired.
   3. Verify `passwordHash` is not null. Throw 400 if not password-protected.
   4. `bcrypt.compare()`. On match → return shared project data. On mismatch → throw 401.
-- [ ] **(4.2c)** Add `POST /shared/:token/verify` endpoint (`@Public()`): return `200` or `401`.
-- [ ] **(4.3a)** Add `getShareLinkInfo(projectId, userId)` to `ShareService`: verify ownership. Return `{ id, projectId, shareToken, expiresAt, allowDownload, isPasswordProtected, createdAt }`.
-- [ ] **(4.3b)** Add `GET /` to `ShareController` (authenticated): return `200`.
-- [ ] **(4.4a)** Add `deleteShareLink(projectId, userId)` to `ShareService`: verify ownership. Hard-delete `ShareLink`. Throw 404 if none.
-- [ ] **(4.4b)** Add `DELETE /` to `ShareController` (authenticated): return `204`.
-- [ ] **(4.5a)** Add `compareVersions(projectId, v1Id, v2Id, userId)` to `VersionService`:
+- [x] **(4.2c)** Add `POST /shared/:token/verify` endpoint (`@Public()`): return `200` or `401`.
+- [x] **(4.3a)** Add `getShareLinkInfo(projectId, userId)` to `ShareService`: verify ownership. Return `{ id, projectId, shareToken, expiresAt, allowDownload, isPasswordProtected, createdAt }`.
+- [x] **(4.3b)** Add `GET /` to `ShareController` (authenticated): return `200`.
+- [x] **(4.4a)** Add `deleteShareLink(projectId, userId)` to `ShareService`: verify ownership. Hard-delete `ShareLink`. Throw 404 if none.
+- [x] **(4.4b)** Add `DELETE /` to `ShareController` (authenticated): return `204`.
+- [x] **(4.5a)** Add `compareVersions(projectId, v1Id, v2Id, userId)` to `VersionService`:
   1. Verify ownership. Load both versions. Throw 404 if either missing.
   2. Compute config diff: `added`, `removed`, `changed` keys.
-- [ ] **(4.5b)** Create `src/version/dto/version-compare-response.dto.ts`.
-- [ ] **(4.5c)** Add `GET /:v1/compare/:v2` to `VersionController`.
-- [ ] **(4.6a)** Add `revertToVersion(projectId, versionId, userId)` to `VersionService`: verify ownership. Copy `version.config` to `Project.config`. Update `updatedAt`.
-- [ ] **(4.6b)** Add `POST /:versionId/revert` to `VersionController`.
-- [ ] **(4.10a)** Update `ProjectService` to auto-derive status: on first `VersionService.create()` → update project to `active`. Add `archiveProject(projectId, userId)` method.
-- [ ] **(4.10b)** Add optional `status` filter to `findAllByUser` and `search` queries.
+- [x] **(4.5b)** Create `src/version/dto/version-compare-response.dto.ts`.
+- [x] **(4.5c)** Add `GET /:v1/compare/:v2` to `VersionController`.
+- [x] **(4.6a)** Add `revertToVersion(projectId, versionId, userId)` to `VersionService`: verify ownership. Copy `version.config` to `Project.config`. Update `updatedAt`.
+- [x] **(4.6b)** Add `POST /:versionId/revert` to `VersionController`.
+- [x] **(4.10a)** Update `ProjectService` to auto-derive status: on first `VersionService.create()` → update project to `active`. Add `archiveProject(projectId, userId)` method.
+- [x] **(4.10b)** Add optional `status` filter to `findAllByUser` and `search` queries.
 
 #### Agent: `integration` — "polish-infra"
 
-- [ ] **(4.7a)** Create `CacheService` using `ioredis`. Methods: `get<T>(key)`, `set(key, value, ttlSeconds)`, `del(key)`, `delByPattern(pattern)`.
-- [ ] **(4.7b)** Add caching to `ProjectService.findById()`: cache key `project:{id}`, TTL 300s. Invalidate on `update()` and `softDelete()`.
-- [ ] **(4.7c)** Add caching to `ContentService.getContent()`: cache key `content:{projectId}`, TTL 300s. Invalidate on `updateContent()`.
-- [ ] **(4.7d)** Add caching to `ContentService.getSummary()`: cache key `summary:{projectId}`, TTL 600s. Invalidate on analysis re-run.
-- [ ] **(4.8a)** Install `sanitize-html` (+ `@types/sanitize-html` dev).
-- [ ] **(4.8b)** Create `src/common/utils/sanitize.ts`: export `sanitizeText(input)` that strips HTML, scripts, iframes, event handlers. Preserves plain text.
-- [ ] **(4.8c)** Apply sanitization in `ProjectService.create()` (title, content.text), `update()` (title), `ContentService.updateContent()` (text), `updateScene()` (text, description, imagePrompt).
-- [ ] **(4.9a)** Create `src/common/interceptors/rate-limit-headers.interceptor.ts`: copy `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` from request to response headers.
-- [ ] **(4.9b)** Register as global interceptor in `main.ts`.
+- [x] **(4.7a)** Create `CacheService` using `ioredis`. Methods: `get<T>(key)`, `set(key, value, ttlSeconds)`, `del(key)`, `delByPattern(pattern)`.
+- [x] **(4.7b)** Add caching to `ProjectService.findById()`: cache key `project:{id}`, TTL 300s. Invalidate on `update()` and `softDelete()`.
+- [x] **(4.7c)** Add caching to `ContentService.getContent()`: cache key `content:{projectId}`, TTL 300s. Invalidate on `updateContent()`.
+- [x] **(4.7d)** Add caching to `ContentService.getSummary()`: cache key `summary:{projectId}`, TTL 600s. Invalidate on analysis re-run.
+- [x] **(4.8a)** Install `sanitize-html` (+ `@types/sanitize-html` dev).
+- [x] **(4.8b)** Create `src/common/utils/sanitize.ts`: export `sanitizeText(input)` that strips HTML, scripts, iframes, event handlers. Preserves plain text.
+- [x] **(4.8c)** Apply sanitization in `ProjectService.create()` (title, content.text), `update()` (title), `ContentService.updateContent()` (text), `updateScene()` (text, description, imagePrompt).
+- [x] **(4.9a)** Create `src/common/interceptors/rate-limit-headers.interceptor.ts`: copy `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` from request to response headers.
+- [x] **(4.9b)** Register as global interceptor in `main.ts`.
 
 ---
 
@@ -709,14 +709,14 @@ Sequential: 3.8 → 3.9 → 3.10
 
 #### Agent: `testing` — "p3-unit-tests"
 
-- [ ] **(4.11a)** Create `test/unit/share/share-password.spec.ts`: password-protected creation (bcrypt hash, work factor 12); verification (correct → data, incorrect → 401, expired → 404).
-- [ ] **(4.11b)** Create `test/unit/share/share-crud.spec.ts`: getShareLinkInfo (metadata, `isPasswordProtected`); deleteShareLink (hard-delete, 404 when none).
-- [ ] **(4.11c)** Create `test/unit/version/version-compare.spec.ts`: identical configs, added/removed/changed keys, nested changes.
-- [ ] **(4.11d)** Create `test/unit/version/version-revert.spec.ts`: project config updated, `updatedAt` changed, 404 for non-existent.
-- [ ] **(4.11e)** Create `test/unit/common/redis-cache.spec.ts`: mock ioredis. Test get/set/del/delByPattern. Test cache integration with findById.
-- [ ] **(4.11f)** Create `test/unit/common/sanitize.spec.ts`: strips `<script>` (including content), `<iframe>`, event handlers; preserves text; handles nested tags, empty input.
-- [ ] **(4.11g)** Create `test/unit/common/rate-limit-headers.spec.ts`: forwards all three headers; handles missing headers gracefully.
-- [ ] **(4.11h)** Create `test/unit/project/project-status.spec.ts`: new project is `draft`; becomes `active` on first version; can be archived; `findAllByUser` respects filter.
+- [x] **(4.11a)** Create `test/unit/share/share-password.spec.ts`: password-protected creation (bcrypt hash, work factor 12); verification (correct → data, incorrect → 401, expired → 404).
+- [x] **(4.11b)** Create `test/unit/share/share-crud.spec.ts`: getShareLinkInfo (metadata, `isPasswordProtected`); deleteShareLink (hard-delete, 404 when none).
+- [x] **(4.11c)** Create `test/unit/version/version-compare.spec.ts`: identical configs, added/removed/changed keys, nested changes.
+- [x] **(4.11d)** Create `test/unit/version/version-revert.spec.ts`: project config updated, `updatedAt` changed, 404 for non-existent.
+- [x] **(4.11e)** Create `test/unit/common/redis-cache.spec.ts`: mock ioredis. Test get/set/del/delByPattern. Test cache integration with findById.
+- [x] **(4.11f)** Create `test/unit/common/sanitize.spec.ts`: strips `<script>` (including content), `<iframe>`, event handlers; preserves text; handles nested tags, empty input.
+- [x] **(4.11g)** Create `test/unit/common/rate-limit-headers.spec.ts`: forwards all three headers; handles missing headers gracefully.
+- [x] **(4.11h)** Create `test/unit/project/project-status.spec.ts`: new project is `draft`; becomes `active` on first version; can be archived; `findAllByUser` respects filter.
 
 ---
 

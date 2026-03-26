@@ -9,6 +9,7 @@ import { validateEnv } from './common/config/app.config.js';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js';
+import { RateLimitHeadersInterceptor } from './common/interceptors/rate-limit-headers.interceptor.js';
 
 async function bootstrap(): Promise<void> {
   // Patch Swagger before creating the app
@@ -35,7 +36,7 @@ async function bootstrap(): Promise<void> {
   // Global pipes, filters, interceptors
   app.useGlobalPipes(new ZodValidationPipe());
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new LoggingInterceptor());
+  app.useGlobalInterceptors(new LoggingInterceptor(), new RateLimitHeadersInterceptor());
 
   // Swagger (conditional)
   if (config.SWAGGER_ENABLED) {

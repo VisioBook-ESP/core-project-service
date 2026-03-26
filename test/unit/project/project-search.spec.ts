@@ -25,7 +25,17 @@ function createMocks() {
     publishProjectDeleted: vi.fn().mockResolvedValue(undefined),
   };
 
-  const service = new ProjectService(mockPrisma as never, mockNatsPublisher as never);
+  const mockCache = {
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    del: vi.fn().mockResolvedValue(undefined),
+  };
+
+  const service = new ProjectService(
+    mockPrisma as never,
+    mockNatsPublisher as never,
+    mockCache as never,
+  );
 
   return { service, mockPrisma, mockNatsPublisher };
 }
@@ -134,7 +144,7 @@ describe('ProjectController.search — feature flag', () => {
 
     const result = await controller.search('u1', { q: 'hello', page: 1, pageSize: 20 } as never);
 
-    expect(mockService.search).toHaveBeenCalledWith('u1', 'hello', 1, 20);
+    expect(mockService.search).toHaveBeenCalledWith('u1', 'hello', 1, 20, undefined);
     expect(result.total).toBe(0);
   });
 });
