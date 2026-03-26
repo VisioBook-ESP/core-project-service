@@ -169,7 +169,7 @@ Sequential within agent. No dependency on `backend` agent's output.
 - [x] **(1.2o)** Define `ShareLink` model: `id`, `projectId`, `shareToken` (unique), `passwordHash?`, `expiresAt?`, `allowDownload` (default false), `createdAt`. Relation to Project (Cascade). Index: `[projectId]`.
 - [x] **(1.2p)** Run `npx prisma migrate dev --name init`. Verify all tables, enums, indexes, and unique constraints.
 - [x] **(1.2q)** Run `npx prisma generate` to produce the typed Prisma Client.
-- [x] **(1.2r)** Create `PrismaService`: extend `PrismaClient`, implement `onModuleInit()` → `$connect()` and `onModuleDestroy()` → `$disconnect()`. Export from a global `PrismaModule`.
+- [x] **(1.2r)** Create `PrismaService`: extend `PrismaClient`; implement `onModuleInit()` → `$connect()` and `onModuleDestroy()` → `$disconnect()`. Export from a global `PrismaModule`.
 
 #### Agent: `backend` — "auth-validation"
 
