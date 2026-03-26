@@ -23,7 +23,9 @@ existingSecretPgcrud: ""
 
 service:
   type: ClusterIP
-  port: 8086
+  port: 3010
+  targetPort: 8086
+
 
 istio:
   enabled: true
