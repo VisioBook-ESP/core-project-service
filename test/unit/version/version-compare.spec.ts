@@ -84,12 +84,8 @@ describe('VersionService — compareVersions', () => {
   it('should detect changed keys including nested objects', async () => {
     const { service, mockPrisma } = createMocks();
     mockPrisma.projectVersion.findFirst
-      .mockResolvedValueOnce(
-        makeVersion('v1', 1, { style: 'anime', nested: { a: 1 } }),
-      )
-      .mockResolvedValueOnce(
-        makeVersion('v2', 2, { style: 'realistic', nested: { a: 2 } }),
-      );
+      .mockResolvedValueOnce(makeVersion('v1', 1, { style: 'anime', nested: { a: 1 } }))
+      .mockResolvedValueOnce(makeVersion('v2', 2, { style: 'realistic', nested: { a: 2 } }));
 
     const result = await service.compareVersions('p1', 'v1', 'v2', 'u1');
 

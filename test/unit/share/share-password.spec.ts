@@ -1,8 +1,4 @@
-import {
-  NotFoundException,
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { ShareService } from '../../../src/share/share.service.js';
 
 vi.mock('bcrypt', () => ({
@@ -177,9 +173,7 @@ describe('ShareService — password', () => {
         },
       });
 
-      await expect(service.verifySharePassword('tok', 'any')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.verifySharePassword('tok', 'any')).rejects.toThrow(BadRequestException);
     });
   });
 });

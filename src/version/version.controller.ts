@@ -62,7 +62,9 @@ export class VersionController {
 
   @Post(':versionId/revert')
   @HttpCode(201)
-  @ApiOperation({ summary: 'Revert to a specific version (creates a new version with the same config)' })
+  @ApiOperation({
+    summary: 'Revert to a specific version (creates a new version with the same config)',
+  })
   @ApiParam({ name: 'projectId', format: 'uuid' })
   @ApiParam({ name: 'versionId', format: 'uuid' })
   @ApiResponse({ status: 201, type: VersionResponseDtoClass })

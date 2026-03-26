@@ -31,7 +31,11 @@ function createMocks() {
     del: vi.fn().mockResolvedValue(undefined),
   };
 
-  const service = new ProjectService(mockPrisma as never, mockNatsPublisher as never, mockCache as never);
+  const service = new ProjectService(
+    mockPrisma as never,
+    mockNatsPublisher as never,
+    mockCache as never,
+  );
 
   return { service, mockPrisma, mockNatsPublisher };
 }

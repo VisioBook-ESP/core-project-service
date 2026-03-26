@@ -105,10 +105,7 @@ export class ShareService {
     };
   }
 
-  async verifySharePassword(
-    token: string,
-    password: string,
-  ): Promise<SharedProjectResponseDto> {
+  async verifySharePassword(token: string, password: string): Promise<SharedProjectResponseDto> {
     const shareLink = await this.prisma.shareLink.findUnique({
       where: { shareToken: token },
       include: {
@@ -156,10 +153,7 @@ export class ShareService {
     };
   }
 
-  async getShareLinkInfo(
-    projectId: string,
-    userId: string,
-  ): Promise<ShareLinkResponseDto | null> {
+  async getShareLinkInfo(projectId: string, userId: string): Promise<ShareLinkResponseDto | null> {
     await this.projectService.ensureOwnership(projectId, userId);
 
     const shareLink = await this.prisma.shareLink.findFirst({

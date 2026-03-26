@@ -26,7 +26,11 @@ function createMocks() {
     del: vi.fn().mockResolvedValue(undefined),
   };
 
-  const service = new ContentService(mockPrisma as never, mockProjectService as never, mockCache as never);
+  const service = new ContentService(
+    mockPrisma as never,
+    mockProjectService as never,
+    mockCache as never,
+  );
 
   return { service, mockPrisma, mockProjectService };
 }
