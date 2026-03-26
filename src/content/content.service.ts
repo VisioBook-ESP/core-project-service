@@ -1,6 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/database/prisma.service.js';
 import { ProjectService } from '../project/project.service.js';
+import { CacheService } from '../common/cache/cache.service.js';
+import { sanitizeText } from '../common/utils/sanitize.js';
 import type { ProjectContent, Scene, Character, Prisma } from '../generated/prisma/client.js';
 import type { UpdateContentDto } from './dto/update-content.dto.js';
 import type { UpdateSceneDto } from './dto/update-scene.dto.js';
@@ -12,10 +14,14 @@ export class ContentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly projectService: ProjectService,
+    private readonly cache: CacheService,
   ) {}
 
   async getContent(projectId: string, userId: string): Promise<ProjectContent> {
     await this.projectService.ensureOwnership(projectId, userId);
+
+    const cached = await this.cache.get<ProjectContent>('content:' + projectId);
+    if (cached) return cached;
 
     const content = await this.prisma.projectContent.findUnique({
       where: { projectId },
@@ -25,6 +31,7 @@ export class ContentService {
       throw new NotFoundException('Content not found');
     }
 
+    await this.cache.set('content:' + projectId, content, 300);
     return content;
   }
 
@@ -38,8 +45,8 @@ export class ContentService {
     const data: Prisma.ProjectContentUpdateInput = {};
 
     if (dto.text !== undefined) {
-      data.text = dto.text;
-      data.wordCount = dto.text.split(/\s+/).filter(Boolean).length;
+      data.text = sanitizeText(dto.text);
+      data.wordCount = (data.text as string).split(/\s+/).filter(Boolean).length;
     }
 
     if (dto.metadata !== undefined) {
@@ -50,6 +57,8 @@ export class ContentService {
       where: { projectId },
       data,
     });
+
+    await this.cache.del('content:' + projectId);
 
     this.logger.log({ projectId, userId }, 'Content updated');
     return updated;
@@ -67,12 +76,17 @@ export class ContentService {
   async getSummary(projectId: string, userId: string): Promise<{ summary: string | null }> {
     await this.projectService.ensureOwnership(projectId, userId);
 
+    const cached = await this.cache.get<{ summary: string | null }>('summary:' + projectId);
+    if (cached) return cached;
+
     const content = await this.prisma.projectContent.findUnique({
       where: { projectId },
       select: { summary: true },
     });
 
-    return { summary: content?.summary ?? null };
+    const result = { summary: content?.summary ?? null };
+    await this.cache.set('summary:' + projectId, result, 600);
+    return result;
   }
 
   async updateScene(
@@ -91,9 +105,15 @@ export class ContentService {
       throw new NotFoundException('Scene not found');
     }
 
+    const sanitizedData: Record<string, unknown> = {};
+    if (dto.text !== undefined) sanitizedData.text = sanitizeText(dto.text);
+    if (dto.description !== undefined) sanitizedData.description = sanitizeText(dto.description);
+    if (dto.imagePrompt !== undefined) sanitizedData.imagePrompt = sanitizeText(dto.imagePrompt);
+    const updateData = { ...dto, ...sanitizedData };
+
     const updated = await this.prisma.scene.update({
       where: { id: sceneId },
-      data: dto,
+      data: updateData,
     });
 
     this.logger.log({ projectId, sceneId, userId }, 'Scene updated');

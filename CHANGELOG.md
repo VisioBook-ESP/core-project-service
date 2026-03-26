@@ -9,6 +9,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+#### Share Password Protection (Wave 15, Tasks 4.1–4.4)
+
+- Password-protected share links with bcrypt hashing (work factor 12)
+- `POST /shared/:token/verify` public endpoint for password verification
+- `GET /projects/:projectId/share` endpoint to retrieve share link metadata (includes `isPasswordProtected`)
+- `DELETE /projects/:projectId/share` endpoint to hard-delete share links
+- `src/share/dto/verify-password.dto.ts` — Zod schema for password verification
+
+#### Version Compare & Revert (Wave 15, Tasks 4.5–4.6)
+
+- `GET /projects/:projectId/versions/:v1/compare/:v2` — config diff with added/removed/changed keys
+- `POST /projects/:projectId/versions/:versionId/revert` — non-destructive revert (creates new version with source config)
+- `src/version/dto/version-compare-response.dto.ts` — comparison response DTO
+
+#### Redis Cache Layer (Wave 15, Tasks 4.7a–d)
+
+- `src/common/cache/cache.service.ts` — ioredis-based cache with get/set/del/delByPattern (SCAN-based), non-fatal error handling
+- `src/common/cache/cache.module.ts` — Global module for CacheService
+- Caching on `ProjectService.findById()` (TTL 300s), `ContentService.getContent()` (TTL 300s), `ContentService.getSummary()` (TTL 600s)
+- Cache invalidation on update/delete operations and NATS `ANALYSIS_COMPLETED` events
+
+#### Input Sanitization (Wave 15, Tasks 4.8a–c)
+
+- Installed `sanitize-html` for HTML/XSS stripping
+- `src/common/utils/sanitize.ts` — `sanitizeText()` utility stripping all HTML tags
+- Applied sanitization in ProjectService (create/update title, create text) and ContentService (updateContent text, updateScene text/description/imagePrompt)
+
+#### Rate Limit Headers (Wave 15, Tasks 4.9a–b)
+
+- `src/common/interceptors/rate-limit-headers.interceptor.ts` — forwards Kong `X-RateLimit-*` headers to response
+- Registered as global interceptor in `main.ts`
+
+#### Project Status Lifecycle (Wave 15, Tasks 4.10a–b)
+
+- `activateIfDraft()` — auto-activates project on first version creation
+- `archiveProject()` — archive with active workflow conflict checking
+- Optional `status` filter on `findAllByUser()` and `search()` queries
+- `POST /projects/:id/archive` endpoint
+
+#### P3 Unit Tests (Wave 16, Tasks 4.11a–h)
+
+- 8 new test files, 53 new tests (304 total unit tests)
+- `test/unit/share/share-password.spec.ts` — bcrypt hashing, password verification (6 tests)
+- `test/unit/share/share-crud.spec.ts` — getShareLinkInfo, deleteShareLink (4 tests)
+- `test/unit/version/version-compare.spec.ts` — config diff scenarios (6 tests)
+- `test/unit/version/version-revert.spec.ts` — revert creates new version (3 tests)
+- `test/unit/common/redis-cache.spec.ts` — CacheService with mocked ioredis (7 tests)
+- `test/unit/common/sanitize.spec.ts` — HTML/XSS stripping (7 tests)
+- `test/unit/common/rate-limit-headers.spec.ts` — header forwarding (4 tests)
+- `test/unit/project/project-status.spec.ts` — status lifecycle (6 tests)
+- Fixed 5 pre-existing test files for CacheService injection compatibility
+
+### Added
+
 #### E2E Tests (Tasks 3.18a-g)
 
 - `test/e2e/setup.ts` — E2E bootstrap with testcontainers (PostgreSQL, Redis, NATS), process.env-based config, mocked external clients

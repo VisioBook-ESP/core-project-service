@@ -29,6 +29,7 @@ describe('ShareService', () => {
         shareToken: 'abc123',
         expiresAt: null,
         allowDownload: false,
+        passwordHash: null,
         createdAt: now,
       });
 
@@ -40,6 +41,7 @@ describe('ShareService', () => {
         shareToken: 'abc123',
         expiresAt: null,
         allowDownload: false,
+        isPasswordProtected: false,
         createdAt: now,
       });
       expect(mockPrisma.shareLink.create).toHaveBeenCalledWith({

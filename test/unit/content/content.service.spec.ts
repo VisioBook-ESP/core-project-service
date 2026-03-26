@@ -16,7 +16,13 @@ function createMocks() {
     ensureOwnership: vi.fn().mockResolvedValue({ id: 'p1', userId: 'u1' }),
   };
 
-  const service = new ContentService(mockPrisma as never, mockProjectService as never);
+  const mockCache = {
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    del: vi.fn().mockResolvedValue(undefined),
+  };
+
+  const service = new ContentService(mockPrisma as never, mockProjectService as never, mockCache as never);
 
   return { service, mockPrisma, mockProjectService };
 }

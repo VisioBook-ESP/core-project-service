@@ -7,6 +7,7 @@ export const ShareLinkResponseSchema = z.object({
   shareToken: z.string(),
   expiresAt: z.coerce.date().nullable(),
   allowDownload: z.boolean(),
+  isPasswordProtected: z.boolean(),
   createdAt: z.coerce.date(),
 });
 

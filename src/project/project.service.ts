@@ -1,6 +1,8 @@
 import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../common/database/prisma.service.js';
 import { NatsPublisher } from '../messaging/nats.publisher.js';
+import { CacheService } from '../common/cache/cache.service.js';
+import { sanitizeText } from '../common/utils/sanitize.js';
 import type { Project, Prisma } from '../generated/prisma/client.js';
 import type { CreateProjectDto } from './dto/create-project.dto.js';
 import type { UpdateProjectDto } from './dto/update-project.dto.js';
@@ -14,6 +16,7 @@ export class ProjectService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly natsPublisher: NatsPublisher,
+    private readonly cache: CacheService,
   ) {}
 
   async ensureOwnership(projectId: string, userId: string): Promise<Project> {
@@ -33,18 +36,20 @@ export class ProjectService {
   }
 
   async create(userId: string, dto: CreateProjectDto): Promise<Project> {
-    const wordCount = dto.content.text.split(/\s+/).filter(Boolean).length;
+    const sanitizedTitle = sanitizeText(dto.title);
+    const sanitizedText = sanitizeText(dto.content.text);
+    const wordCount = sanitizedText.split(/\s+/).filter(Boolean).length;
 
     const project = await this.prisma.$transaction(async (tx) => {
       const created = await tx.project.create({
         data: {
           userId,
-          title: dto.title,
+          title: sanitizedTitle,
           sourceType: dto.sourceType,
           config: (dto.config ?? {}) as Prisma.InputJsonValue,
           content: {
             create: {
-              text: dto.content.text,
+              text: sanitizedText,
               wordCount,
               metadata: (dto.content.metadata ?? {}) as Prisma.InputJsonValue,
             },
@@ -63,6 +68,10 @@ export class ProjectService {
   async findById(projectId: string, userId: string): Promise<Project> {
     await this.ensureOwnership(projectId, userId);
 
+    const cacheKey = 'project:' + userId + ':' + projectId;
+    const cached = await this.cache.get<Project>(cacheKey);
+    if (cached) return cached;
+
     const project = await this.prisma.project.findFirst({
       where: { id: projectId, userId, deletedAt: null },
       include: { content: true },
@@ -72,6 +81,7 @@ export class ProjectService {
       throw new NotFoundException('Project not found');
     }
 
+    await this.cache.set(cacheKey, project, 300);
     return project;
   }
 
@@ -79,7 +89,12 @@ export class ProjectService {
     userId: string,
     query: ListProjectsQueryDto,
   ): Promise<PaginatedResponse<Project>> {
-    const where = { userId, deletedAt: null };
+    const where: Prisma.ProjectWhereInput = { userId, deletedAt: null };
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
     const skip = (query.page - 1) * query.pageSize;
 
     const [items, total] = await Promise.all([
@@ -116,13 +131,15 @@ export class ProjectService {
     }
 
     const data: Prisma.ProjectUpdateInput = {};
-    if (dto.title !== undefined) data.title = dto.title;
+    if (dto.title !== undefined) data.title = sanitizeText(dto.title);
     if (dto.config !== undefined) data.config = dto.config as Prisma.InputJsonValue;
 
     const updated = await this.prisma.project.update({
       where: { id: projectId },
       data,
     });
+
+    await this.cache.del('project:' + userId + ':' + projectId);
 
     this.logger.log({ projectId, userId }, 'Project updated');
     return updated;
@@ -136,6 +153,8 @@ export class ProjectService {
       data: { deletedAt: new Date() },
     });
 
+    await this.cache.del('project:' + userId + ':' + projectId);
+
     await this.natsPublisher.publishProjectDeleted({
       projectId,
       userId,
@@ -146,20 +165,57 @@ export class ProjectService {
     this.logger.log({ projectId, userId }, 'Project soft-deleted');
   }
 
+  async activateIfDraft(projectId: string): Promise<void> {
+    await this.prisma.project.updateMany({
+      where: { id: projectId, status: 'draft' },
+      data: { status: 'active' },
+    });
+  }
+
+  async archiveProject(projectId: string, userId: string): Promise<Project> {
+    const project = await this.ensureOwnership(projectId, userId);
+
+    if (project.status === 'archived') {
+      throw new ConflictException('Project is already archived');
+    }
+
+    const activeVersion = await this.prisma.projectVersion.findFirst({
+      where: {
+        projectId,
+        status: { in: ['analyzing', 'generating'] },
+      },
+    });
+
+    if (activeVersion) {
+      throw new ConflictException('Cannot archive project while a workflow is active');
+    }
+
+    const updated = await this.prisma.project.update({
+      where: { id: projectId },
+      data: { status: 'archived' },
+    });
+
+    this.logger.log({ projectId, userId }, 'Project archived');
+    return updated;
+  }
+
   async search(
     userId: string,
     query: string,
     page: number = 1,
     pageSize: number = 20,
+    status?: string,
   ): Promise<PaginatedResponse<Project>> {
     const offset = (page - 1) * pageSize;
     const tsQuery = query.trim();
+    const statusFilter = status ?? null;
 
     const items = await this.prisma.$queryRaw<Project[]>`
       SELECT p."id", p."userId", p."title", p."status", p."sourceType", p."config", p."createdAt", p."updatedAt", p."deletedAt" FROM "Project" p
       LEFT JOIN "ProjectContent" pc ON pc."projectId" = p.id
       WHERE p."userId" = ${userId}
         AND p."deletedAt" IS NULL
+        AND (${statusFilter}::text IS NULL OR p."status" = ${statusFilter})
         AND (
           p."search_vector" @@ plainto_tsquery('english', ${tsQuery})
           OR pc."search_vector" @@ plainto_tsquery('english', ${tsQuery})
@@ -177,6 +233,7 @@ export class ProjectService {
       LEFT JOIN "ProjectContent" pc ON pc."projectId" = p.id
       WHERE p."userId" = ${userId}
         AND p."deletedAt" IS NULL
+        AND (${statusFilter}::text IS NULL OR p."status" = ${statusFilter})
         AND (
           p."search_vector" @@ plainto_tsquery('english', ${tsQuery})
           OR pc."search_vector" @@ plainto_tsquery('english', ${tsQuery})

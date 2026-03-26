@@ -16,6 +16,7 @@ import { APP_CONFIG } from '../common/config/app.config.js';
 import type { AppConfig } from '../common/config/app.config.js';
 import { PrismaService } from '../common/database/prisma.service.js';
 import { MetricsService } from '../metrics/metrics.service.js';
+import { CacheService } from '../common/cache/cache.service.js';
 import { STREAM_NAME, CONSUMER_NAME, CONSUMER_FILTER, AI_SUBJECTS } from './subjects.js';
 import type { WorkflowService } from '../workflow/workflow.service.js';
 
@@ -102,6 +103,7 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
   private running = true;
   private workflowService!: WorkflowService;
   private metricsService: MetricsService | undefined;
+  private cacheService: CacheService | undefined;
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
@@ -119,6 +121,13 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
       this.metricsService = this.moduleRef.get(MetricsService, { strict: false });
     } catch {
       // MetricsModule not loaded — metrics disabled
+    }
+
+    // Resolve CacheService (optional — graceful if not available)
+    try {
+      this.cacheService = this.moduleRef.get(CacheService, { strict: false });
+    } catch {
+      // CacheModule not loaded
     }
 
     // Connect in background so the app can start even if NATS is temporarily unavailable
@@ -282,6 +291,8 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
             }
           }
         });
+        await this.cacheService?.del('summary:' + parsed.projectId);
+        await this.cacheService?.del('content:' + parsed.projectId);
         await this.workflowService.handleStepCompleted(parsed.executionId, 'analysis', data);
         break;
       }

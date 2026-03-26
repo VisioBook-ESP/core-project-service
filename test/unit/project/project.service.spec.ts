@@ -23,7 +23,13 @@ function createMocks() {
     publishProjectDeleted: vi.fn().mockResolvedValue(undefined),
   };
 
-  const service = new ProjectService(mockPrisma as never, mockNatsPublisher as never);
+  const mockCache = {
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    del: vi.fn().mockResolvedValue(undefined),
+  };
+
+  const service = new ProjectService(mockPrisma as never, mockNatsPublisher as never, mockCache as never);
 
   return { service, mockPrisma, mockNatsPublisher };
 }

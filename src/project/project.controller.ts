@@ -52,7 +52,7 @@ export class ProjectController {
     if (!this.config.FEATURE_SEARCH_ENABLED) {
       throw new NotFoundException('Search is not available');
     }
-    return this.projectService.search(userId, query.q, query.page, query.pageSize);
+    return this.projectService.search(userId, query.q, query.page, query.pageSize, query.status);
   }
 
   @Get(':id')
@@ -73,6 +73,15 @@ export class ProjectController {
     @Body() dto: UpdateProjectDtoClass,
   ) {
     return this.projectService.update(id, userId, dto);
+  }
+
+  @Post(':id/archive')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Archive a project' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 200, type: ProjectResponseDtoClass })
+  async archive(@CurrentUser() userId: string, @Param('id') id: string) {
+    return this.projectService.archiveProject(id, userId);
   }
 
   @Delete(':id')

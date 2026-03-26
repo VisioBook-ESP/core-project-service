@@ -17,6 +17,7 @@ function createMocks() {
       userId: 'u1',
       config: { style: 'default' },
     }),
+    activateIfDraft: vi.fn().mockResolvedValue(undefined),
   };
 
   const service = new VersionService(mockPrisma as never, mockProjectService as never);
