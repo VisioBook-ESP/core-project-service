@@ -25,16 +25,25 @@ export class NotificationServiceClient {
     this.baseUrl = config.NOTIFICATION_SERVICE_URL;
   }
 
-  async sendNotification(payload: SendNotificationPayload, requestId?: string): Promise<void> {
+  async sendNotification(
+    payload: SendNotificationPayload,
+    requestId?: string,
+    bearerToken?: string,
+  ): Promise<void> {
     if (!this.baseUrl) {
       this.logger.debug('NOTIFICATION_SERVICE_URL not configured — skipping notification');
       return;
     }
+    const headers = this.buildHeaders({
+      requestId,
+      userId: payload.userId,
+      bearerToken,
+    });
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         await firstValueFrom(
           this.httpService.post(`${this.baseUrl}/api/v1/notifications/send`, payload, {
-            headers: this.buildHeaders(requestId),
+            headers,
           }),
         );
         this.logger.debug({ userId: payload.userId, type: payload.type }, 'Notification sent');
@@ -57,11 +66,15 @@ export class NotificationServiceClient {
     }
   }
 
-  private buildHeaders(requestId?: string): Record<string, string> {
+  private buildHeaders(opts?: {
+    requestId?: string;
+    userId?: string;
+    bearerToken?: string;
+  }): Record<string, string> {
     const headers: Record<string, string> = {};
-    if (requestId) {
-      headers['X-Request-Id'] = requestId;
-    }
+    if (opts?.requestId) headers['X-Request-Id'] = opts.requestId;
+    if (opts?.userId) headers['X-User-Id'] = opts.userId;
+    if (opts?.bearerToken) headers['Authorization'] = `Bearer ${opts.bearerToken}`;
     return headers;
   }
 }

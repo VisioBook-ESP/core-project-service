@@ -44,6 +44,7 @@ async function bootstrap(): Promise<void> {
       .setTitle('Core Project Service')
       .setDescription('VisioBook core project management API')
       .setVersion('0.1.0')
+      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'Bearer')
       .addApiKey({ type: 'apiKey', name: 'X-User-Id', in: 'header' }, 'X-User-Id')
       .build();
     const document = SwaggerModule.createDocument(app, swaggerConfig);
