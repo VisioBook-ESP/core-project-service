@@ -27,6 +27,7 @@ RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+COPY prisma.config.ts ./
 
 ENV NODE_ENV=production
 EXPOSE 8086
