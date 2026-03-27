@@ -24,36 +24,44 @@ export class UserServiceClient {
     this.baseUrl = config.USER_SERVICE_URL;
   }
 
-  async checkQuota(userId: string, requestId?: string): Promise<QuotaCheckResult> {
+  async checkQuota(
+    userId: string,
+    requestId?: string,
+    bearerToken?: string,
+  ): Promise<QuotaCheckResult> {
     return this.withRetry<QuotaCheckResult>(async () => {
       const { data } = await firstValueFrom(
         this.httpService.get<QuotaCheckResult>(`${this.baseUrl}/api/v1/users/${userId}/quota`, {
-          headers: this.buildHeaders(requestId),
+          headers: this.buildHeaders({ requestId, userId, bearerToken }),
         }),
       );
       return data;
     }, 'checkQuota');
   }
 
-  async decrementQuota(userId: string, requestId?: string): Promise<void> {
+  async decrementQuota(userId: string, requestId?: string, bearerToken?: string): Promise<void> {
     await this.withRetry<void>(async () => {
       await firstValueFrom(
         this.httpService.post(
           `${this.baseUrl}/api/v1/users/${userId}/quota/decrement`,
           {},
           {
-            headers: this.buildHeaders(requestId),
+            headers: this.buildHeaders({ requestId, userId, bearerToken }),
           },
         ),
       );
     }, 'decrementQuota');
   }
 
-  private buildHeaders(requestId?: string): Record<string, string> {
+  private buildHeaders(opts?: {
+    requestId?: string;
+    userId?: string;
+    bearerToken?: string;
+  }): Record<string, string> {
     const headers: Record<string, string> = {};
-    if (requestId) {
-      headers['X-Request-Id'] = requestId;
-    }
+    if (opts?.requestId) headers['X-Request-Id'] = opts.requestId;
+    if (opts?.userId) headers['X-User-Id'] = opts.userId;
+    if (opts?.bearerToken) headers['Authorization'] = `Bearer ${opts.bearerToken}`;
     return headers;
   }
 
