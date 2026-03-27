@@ -23,7 +23,7 @@ describe('NotificationServiceClient', () => {
       expect(mockHttpService.post).toHaveBeenCalledWith(
         'http://localhost:8085/api/v1/notifications/send',
         payload,
-        { headers: {} },
+        { headers: { 'X-User-Id': 'u1' } },
       );
     });
 
@@ -34,7 +34,7 @@ describe('NotificationServiceClient', () => {
       await client.sendNotification({ userId: 'u1', type: 'test', data: {} }, 'req-123');
 
       expect(mockHttpService.post).toHaveBeenCalledWith(expect.any(String), expect.any(Object), {
-        headers: { 'X-Request-Id': 'req-123' },
+        headers: { 'X-Request-Id': 'req-123', 'X-User-Id': 'u1' },
       });
     });
 

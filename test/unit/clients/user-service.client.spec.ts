@@ -25,7 +25,7 @@ describe('UserServiceClient', () => {
       expect(result).toEqual(quotaResult);
       expect(mockHttpService.get).toHaveBeenCalledWith(
         'http://localhost:8081/api/v1/users/u1/quota',
-        { headers: {} },
+        { headers: { 'X-User-Id': 'u1' } },
       );
     });
 
@@ -37,7 +37,7 @@ describe('UserServiceClient', () => {
 
       expect(mockHttpService.get).toHaveBeenCalledWith(
         'http://localhost:8081/api/v1/users/u1/quota',
-        { headers: { 'X-Request-Id': 'req-123' } },
+        { headers: { 'X-Request-Id': 'req-123', 'X-User-Id': 'u1' } },
       );
     });
 
@@ -85,7 +85,7 @@ describe('UserServiceClient', () => {
       expect(mockHttpService.post).toHaveBeenCalledWith(
         'http://localhost:8081/api/v1/users/u1/quota/decrement',
         {},
-        { headers: {} },
+        { headers: { 'X-User-Id': 'u1' } },
       );
     });
 
