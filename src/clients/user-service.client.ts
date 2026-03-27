@@ -39,11 +39,7 @@ export class UserServiceClient {
     }, 'checkQuota');
   }
 
-  async decrementQuota(
-    userId: string,
-    requestId?: string,
-    bearerToken?: string,
-  ): Promise<void> {
+  async decrementQuota(userId: string, requestId?: string, bearerToken?: string): Promise<void> {
     await this.withRetry<void>(async () => {
       await firstValueFrom(
         this.httpService.post(
