@@ -2,7 +2,7 @@ name: core-project-service
 replicaCount: 1
 image:
   repository: ghcr.io/visiobook-esp/core-project-service-dev
-  tag: "sha-5e92a1c"
+  tag: "sha-db9af9f"
   pullPolicy: IfNotPresent
 
 strategy:
