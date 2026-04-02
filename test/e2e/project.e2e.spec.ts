@@ -39,27 +39,16 @@ describe('ProjectController (E2E)', () => {
     const res = await request(ctx.httpServer)
       .post('/api/v1/projects')
       .set(authHeaders())
-      .send({
-        title: 'My New Project',
-        sourceType: 'text',
-        content: { text: 'Hello world content' },
-      });
+      .send({ title: 'My New Project' });
 
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty('id');
     expect(res.body.title).toBe('My New Project');
-    expect(res.body.sourceType).toBe('text');
     expect(res.body.userId).toBe(TEST_USER_ID);
   });
 
   it('POST /projects — returns 400 on missing title', async () => {
-    const res = await request(ctx.httpServer)
-      .post('/api/v1/projects')
-      .set(authHeaders())
-      .send({
-        sourceType: 'text',
-        content: { text: 'Hello world' },
-      });
+    const res = await request(ctx.httpServer).post('/api/v1/projects').set(authHeaders()).send({});
 
     expect(res.status).toBe(400);
   });
