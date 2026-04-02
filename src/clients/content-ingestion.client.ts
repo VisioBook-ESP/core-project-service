@@ -31,9 +31,8 @@ export class ContentIngestionClient {
   ): Promise<ExtractedTextResult> {
     return this.withRetry<ExtractedTextResult>(async () => {
       const { data } = await firstValueFrom(
-        this.httpService.post<ExtractedTextResult>(
-          `${this.baseUrl}/api/v1/extract/text`,
-          { fileId },
+        this.httpService.get<ExtractedTextResult>(
+          `${this.baseUrl}/api/v1/documents/${encodeURIComponent(fileId)}`,
           { headers: this.buildHeaders(opts) },
         ),
       );
