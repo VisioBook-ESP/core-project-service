@@ -34,13 +34,16 @@ export async function startPostgres(): Promise<PostgresContext> {
 
   // Apply migration SQL directly (bypasses prisma.config.ts which does not
   // expose datasource.url, making `prisma migrate deploy` fail).
-  const migrationSql = readFileSync(
-    join(process.cwd(), 'prisma', 'migrations', '20260306085746_init', 'migration.sql'),
-    'utf-8',
-  );
+  const migrations = ['20260306085746_init', '20260402120000_make_source_type_optional'];
   const pool = new pg.Pool({ connectionString: connectionUrl });
   try {
-    await pool.query(migrationSql);
+    for (const migration of migrations) {
+      const sql = readFileSync(
+        join(process.cwd(), 'prisma', 'migrations', migration, 'migration.sql'),
+        'utf-8',
+      );
+      await pool.query(sql);
+    }
   } finally {
     await pool.end();
   }
