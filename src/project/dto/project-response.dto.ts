@@ -6,7 +6,7 @@ export const ProjectResponseSchema = z.object({
   userId: z.string().uuid(),
   title: z.string(),
   status: z.enum(['draft', 'active', 'archived']),
-  sourceType: z.enum(['file', 'scan', 'text']),
+  sourceType: z.enum(['file', 'scan', 'text']).nullable(),
   config: z.record(z.unknown()),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),

@@ -6,8 +6,6 @@ import { ListProjectsQuerySchema } from '../../../src/project/dto/list-projects-
 describe('CreateProjectSchema', () => {
   const validInput = {
     title: 'My Project',
-    sourceType: 'file' as const,
-    content: { text: 'Hello world' },
   };
 
   it('should accept valid input', () => {
@@ -15,8 +13,6 @@ describe('CreateProjectSchema', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.title).toBe('My Project');
-      expect(result.data.sourceType).toBe('file');
-      expect(result.data.content.text).toBe('Hello world');
     }
   });
 
@@ -28,14 +24,6 @@ describe('CreateProjectSchema', () => {
     }
   });
 
-  it('should apply default metadata on content', () => {
-    const result = CreateProjectSchema.safeParse(validInput);
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.content.metadata).toEqual({});
-    }
-  });
-
   it('should reject empty title', () => {
     const result = CreateProjectSchema.safeParse({ ...validInput, title: '' });
     expect(result.success).toBe(false);
@@ -43,32 +31,6 @@ describe('CreateProjectSchema', () => {
 
   it('should reject title exceeding 200 characters', () => {
     const result = CreateProjectSchema.safeParse({ ...validInput, title: 'a'.repeat(201) });
-    expect(result.success).toBe(false);
-  });
-
-  it('should reject invalid sourceType', () => {
-    const result = CreateProjectSchema.safeParse({ ...validInput, sourceType: 'video' });
-    expect(result.success).toBe(false);
-  });
-
-  it('should accept all valid sourceType values', () => {
-    for (const sourceType of ['file', 'scan', 'text']) {
-      const result = CreateProjectSchema.safeParse({ ...validInput, sourceType });
-      expect(result.success).toBe(true);
-    }
-  });
-
-  it('should reject missing content', () => {
-    const { content: _, ...noContent } = validInput;
-    const result = CreateProjectSchema.safeParse(noContent);
-    expect(result.success).toBe(false);
-  });
-
-  it('should reject empty content text', () => {
-    const result = CreateProjectSchema.safeParse({
-      ...validInput,
-      content: { text: '' },
-    });
     expect(result.success).toBe(false);
   });
 
@@ -120,7 +82,7 @@ describe('ProjectResponseSchema', () => {
     userId: '550e8400-e29b-41d4-a716-446655440001',
     title: 'My Project',
     status: 'draft' as const,
-    sourceType: 'file' as const,
+    sourceType: null,
     config: {},
     createdAt: '2025-01-01T00:00:00Z',
     updatedAt: '2025-01-01T00:00:00Z',

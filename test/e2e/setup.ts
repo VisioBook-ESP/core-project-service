@@ -51,8 +51,8 @@ export async function bootstrapE2E(): Promise<E2EContext> {
     startNats(),
   ]);
 
-  // 2. Apply fulltext search migration
-  await applyFulltextMigration(pgCtx.connectionUrl);
+  // 2. Apply additional migrations (fulltext search, schema changes)
+  await applyAdditionalMigrations(pgCtx.connectionUrl);
 
   // 3. Fix connection URL (testcontainers returns postgres:// but Zod schema requires postgresql://)
   const databaseUrl = pgCtx.connectionUrl.replace(/^postgres:\/\//, 'postgresql://');
@@ -129,20 +129,20 @@ export { cleanDatabase };
 
 // ---- Helpers ----
 
-async function applyFulltextMigration(connectionUrl: string): Promise<void> {
-  const migrationSql = readFileSync(
-    join(
-      process.cwd(),
-      'prisma',
-      'migrations',
-      '20260313000000_add_fulltext_search',
-      'migration.sql',
-    ),
-    'utf-8',
-  );
+async function applyAdditionalMigrations(connectionUrl: string): Promise<void> {
+  const migrations = [
+    '20260313000000_add_fulltext_search',
+    '20260402120000_make_source_type_optional',
+  ];
   const pool = new pg.Pool({ connectionString: connectionUrl });
   try {
-    await pool.query(migrationSql);
+    for (const migration of migrations) {
+      const sql = readFileSync(
+        join(process.cwd(), 'prisma', 'migrations', migration, 'migration.sql'),
+        'utf-8',
+      );
+      await pool.query(sql);
+    }
   } finally {
     await pool.end();
   }

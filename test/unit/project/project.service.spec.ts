@@ -68,36 +68,26 @@ describe('ProjectService', () => {
   });
 
   describe('create', () => {
-    it('should create project with content and compute wordCount', async () => {
+    it('should create project with title and config', async () => {
       const { service, mockPrisma } = createMocks();
       const created = { id: 'p1', userId: 'u1', title: 'Test' };
       mockPrisma.project.create.mockResolvedValue(created);
 
       const dto = {
         title: 'Test',
-        sourceType: 'text' as const,
         config: {},
-        content: { text: 'hello world foo', metadata: {} },
       };
 
       const result = await service.create('u1', dto);
 
       expect(result).toBe(created);
-      expect(mockPrisma.project.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            userId: 'u1',
-            title: 'Test',
-            sourceType: 'text',
-            content: expect.objectContaining({
-              create: expect.objectContaining({
-                text: 'hello world foo',
-                wordCount: 3,
-              }),
-            }),
-          }),
-        }),
-      );
+      expect(mockPrisma.project.create).toHaveBeenCalledWith({
+        data: {
+          userId: 'u1',
+          title: 'Test',
+          config: {},
+        },
+      });
     });
   });
 

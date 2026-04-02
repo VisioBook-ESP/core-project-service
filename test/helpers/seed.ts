@@ -24,7 +24,7 @@ export async function seedProject(prisma: PrismaClient, overrides: SeedProjectOv
       id: overrides.id ?? randomUUID(),
       userId: overrides.userId ?? TEST_USER_ID,
       title: overrides.title ?? 'Test Project',
-      sourceType: overrides.sourceType ?? 'text',
+      ...(overrides.sourceType ? { sourceType: overrides.sourceType } : {}),
       status: overrides.status ?? 'draft',
       config: overrides.config ?? {},
       deletedAt: overrides.deletedAt ?? null,
