@@ -1,10 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ProjectModule } from '../project/project.module.js';
 import { VersionService } from './version.service.js';
 import { VersionController } from './version.controller.js';
 
 @Module({
-  imports: [ProjectModule],
+  imports: [forwardRef(() => ProjectModule)],
   controllers: [VersionController],
   providers: [VersionService],
   exports: [VersionService],
