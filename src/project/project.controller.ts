@@ -12,9 +12,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { randomUUID } from 'node:crypto';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { ProjectService } from './project.service.js';
+import { VersionService } from '../version/version.service.js';
+import { WorkflowService } from '../workflow/workflow.service.js';
 import { CreateProjectDtoClass } from './dto/create-project.dto.js';
+import { CreateAndGenerateDtoClass } from './dto/create-and-generate.dto.js';
 import { UpdateProjectDtoClass } from './dto/update-project.dto.js';
 import { ProjectResponseDtoClass } from './dto/project-response.dto.js';
 import { ListProjectsQueryDtoClass } from './dto/list-projects-query.dto.js';
@@ -27,6 +31,8 @@ import type { AppConfig } from '../common/config/app.config.js';
 export class ProjectController {
   constructor(
     private readonly projectService: ProjectService,
+    private readonly versionService: VersionService,
+    private readonly workflowService: WorkflowService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -36,6 +42,27 @@ export class ProjectController {
   @ApiResponse({ status: 201, type: ProjectResponseDtoClass })
   async create(@CurrentUser() userId: string, @Body() dto: CreateProjectDtoClass) {
     return this.projectService.create(userId, dto);
+  }
+
+  @Post('generate')
+  @HttpCode(201)
+  @ApiOperation({ summary: 'Create a project and start generation in one step' })
+  @ApiResponse({ status: 201, description: 'Project created and workflow started' })
+  async createAndGenerate(@CurrentUser() userId: string, @Body() dto: CreateAndGenerateDtoClass) {
+    const project = await this.projectService.create(userId, dto);
+    const version = await this.versionService.create(project.id, userId, {});
+    const correlationId = randomUUID();
+    const execution = await this.workflowService.startWorkflow(
+      project.id,
+      version.id,
+      userId,
+      correlationId,
+    );
+    return {
+      projectId: project.id,
+      versionId: version.id,
+      executionId: execution.id,
+    };
   }
 
   @Get()

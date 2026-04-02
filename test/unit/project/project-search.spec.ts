@@ -31,10 +31,15 @@ function createMocks() {
     del: vi.fn().mockResolvedValue(undefined),
   };
 
+  const mockContentIngestionClient = {
+    fetchExtractedText: vi.fn().mockResolvedValue({ text: '', wordCount: 0, metadata: {} }),
+  };
+
   const service = new ProjectService(
     mockPrisma as never,
     mockNatsPublisher as never,
     mockCache as never,
+    mockContentIngestionClient as never,
   );
 
   return { service, mockPrisma, mockNatsPublisher };
@@ -120,7 +125,12 @@ describe('ProjectController.search — feature flag', () => {
   it('should throw NotFoundException when FEATURE_SEARCH_ENABLED is false', async () => {
     const mockService = { search: vi.fn() };
     const mockConfig = { FEATURE_SEARCH_ENABLED: false };
-    const controller = new ProjectController(mockService as never, mockConfig as never);
+    const controller = new ProjectController(
+      mockService as never,
+      {} as never,
+      {} as never,
+      mockConfig as never,
+    );
 
     await expect(
       controller.search('u1', { q: 'test', page: 1, pageSize: 20 } as never),
@@ -140,7 +150,12 @@ describe('ProjectController.search — feature flag', () => {
       }),
     };
     const mockConfig = { FEATURE_SEARCH_ENABLED: true };
-    const controller = new ProjectController(mockService as never, mockConfig as never);
+    const controller = new ProjectController(
+      mockService as never,
+      {} as never,
+      {} as never,
+      mockConfig as never,
+    );
 
     const result = await controller.search('u1', { q: 'hello', page: 1, pageSize: 20 } as never);
 

@@ -135,7 +135,7 @@ export class VersionService {
     }
 
     return this.create(projectId, userId, {
-      config: sourceVersion.config as Record<string, unknown>,
+      config: sourceVersion.config as CreateVersionDto['config'],
     });
   }
 

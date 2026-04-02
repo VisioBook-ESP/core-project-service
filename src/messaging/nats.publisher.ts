@@ -14,6 +14,7 @@ import { APP_CONFIG } from '../common/config/app.config.js';
 import type { AppConfig } from '../common/config/app.config.js';
 import { MetricsService } from '../metrics/metrics.service.js';
 import { STREAM_NAME, STREAM_SUBJECTS, SUBJECTS } from './subjects.js';
+import type { ProjectConfig } from '../common/schemas/project-config.schema.js';
 
 // --- Outbound event payload interfaces ---
 
@@ -22,7 +23,7 @@ export interface WorkflowStartedPayload {
   versionId: string;
   executionId: string;
   userId: string;
-  config: Record<string, unknown>;
+  config: ProjectConfig;
   contentText: string;
   sceneCount: number;
   timestamp: string;

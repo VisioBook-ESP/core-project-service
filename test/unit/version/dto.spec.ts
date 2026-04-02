@@ -7,11 +7,13 @@ describe('CreateVersionSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should accept valid config', () => {
+  it('should accept valid config with defaults applied', () => {
     const result = CreateVersionSchema.safeParse({ config: { style: 'cartoon' } });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.config).toEqual({ style: 'cartoon' });
+      expect(result.data.config).toMatchObject({ style: 'cartoon' });
+      expect(result.data.config!.language).toBe('fr');
+      expect(result.data.config!.format).toBe('landscape');
     }
   });
 

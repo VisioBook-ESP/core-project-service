@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { MessagingModule } from '../messaging/messaging.module.js';
@@ -14,7 +14,7 @@ import { WORKFLOW_QUEUE_NAME } from './workflow.types.js';
     BullModule.registerQueue({ name: WORKFLOW_QUEUE_NAME }),
     EventEmitterModule.forRoot(),
     MessagingModule,
-    ProjectModule,
+    forwardRef(() => ProjectModule),
   ],
   controllers: [WorkflowController, WorkflowSSEController],
   providers: [WorkflowProcessor, WorkflowService],

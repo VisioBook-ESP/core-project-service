@@ -16,11 +16,15 @@ describe('CreateProjectSchema', () => {
     }
   });
 
-  it('should apply default config to empty object', () => {
+  it('should apply default config with typed defaults', () => {
     const result = CreateProjectSchema.safeParse(validInput);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.config).toEqual({});
+      expect(result.data.config).toEqual({
+        style: 'realistic',
+        language: 'fr',
+        format: 'landscape',
+      });
     }
   });
 
@@ -34,14 +38,16 @@ describe('CreateProjectSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should accept custom config', () => {
+  it('should accept custom config with defaults applied', () => {
     const result = CreateProjectSchema.safeParse({
       ...validInput,
-      config: { style: 'cartoon', duration: 60 },
+      config: { style: 'cartoon', vibe: 'epic' },
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.config).toEqual({ style: 'cartoon', duration: 60 });
+      expect(result.data.config).toMatchObject({ style: 'cartoon', vibe: 'epic' });
+      expect(result.data.config.language).toBe('fr');
+      expect(result.data.config.format).toBe('landscape');
     }
   });
 });
@@ -82,7 +88,6 @@ describe('ProjectResponseSchema', () => {
     userId: '550e8400-e29b-41d4-a716-446655440001',
     title: 'My Project',
     status: 'draft' as const,
-    sourceType: null,
     config: {},
     createdAt: '2025-01-01T00:00:00Z',
     updatedAt: '2025-01-01T00:00:00Z',

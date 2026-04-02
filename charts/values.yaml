@@ -93,6 +93,7 @@ env:
   REDIS_PORT: "6379"
   NATS_URL: nats://nats.visiobook-namespace.svc.cluster.local:4222
   USER_SERVICE_URL: http://core-user-service.visiobook-namespace.svc.cluster.local:8081
+  CONTENT_INGESTION_SERVICE_URL: http://content-ingestion-service.visiobook-namespace.svc.cluster.local:3000
 
 probes:
   readiness:

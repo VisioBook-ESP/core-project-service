@@ -17,7 +17,6 @@ export interface ApiErrorResponse {
 // Re-export Prisma enums for convenience
 export {
   ProjectStatus,
-  SourceType,
   VersionStatus,
   ExecutionStatus,
   PipelineStep,

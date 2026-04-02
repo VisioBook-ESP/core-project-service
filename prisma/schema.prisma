@@ -15,12 +15,6 @@ enum ProjectStatus {
   archived
 }
 
-enum SourceType {
-  file
-  scan
-  text
-}
-
 enum VersionStatus {
   draft
   analyzing
@@ -64,7 +58,6 @@ model Project {
   userId     String
   title      String
   status     ProjectStatus @default(draft)
-  sourceType SourceType?
   config     Json          @default("{}")
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt

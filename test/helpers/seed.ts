@@ -12,7 +12,6 @@ export interface SeedProjectOverrides {
   id?: string;
   userId?: string;
   title?: string;
-  sourceType?: 'file' | 'scan' | 'text';
   status?: 'draft' | 'active' | 'archived';
   config?: Record<string, unknown>;
   deletedAt?: Date | null;
@@ -24,7 +23,6 @@ export async function seedProject(prisma: PrismaClient, overrides: SeedProjectOv
       id: overrides.id ?? randomUUID(),
       userId: overrides.userId ?? TEST_USER_ID,
       title: overrides.title ?? 'Test Project',
-      ...(overrides.sourceType ? { sourceType: overrides.sourceType } : {}),
       status: overrides.status ?? 'draft',
       config: overrides.config ?? {},
       deletedAt: overrides.deletedAt ?? null,

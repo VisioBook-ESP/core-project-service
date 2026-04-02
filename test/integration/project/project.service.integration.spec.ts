@@ -43,7 +43,6 @@ describe('Project Prisma queries (integration)', () => {
       data: {
         userId: 'user-1',
         title: 'My Project',
-        sourceType: 'text',
         config: { style: 'cartoon' },
       },
     });
@@ -51,7 +50,6 @@ describe('Project Prisma queries (integration)', () => {
     expect(created.id).toBeDefined();
     expect(created.userId).toBe('user-1');
     expect(created.title).toBe('My Project');
-    expect(created.sourceType).toBe('text');
     expect(created.status).toBe('draft');
     expect(created.deletedAt).toBeNull();
 
@@ -68,7 +66,6 @@ describe('Project Prisma queries (integration)', () => {
       data: {
         userId: 'user-1',
         title: 'Content Project',
-        sourceType: 'text',
         config: {},
         content: {
           create: {
@@ -92,7 +89,6 @@ describe('Project Prisma queries (integration)', () => {
       data: {
         userId: 'user-A',
         title: 'Secret Project',
-        sourceType: 'file',
         config: {},
       },
     });
@@ -109,7 +105,6 @@ describe('Project Prisma queries (integration)', () => {
       data: {
         userId: 'user-1',
         title: 'Will be deleted',
-        sourceType: 'scan',
         config: {},
       },
     });
@@ -141,7 +136,6 @@ describe('Project Prisma queries (integration)', () => {
         data: {
           userId: 'user-1',
           title: `Project ${i}`,
-          sourceType: 'text',
           config: {},
         },
       });
@@ -167,7 +161,6 @@ describe('Project Prisma queries (integration)', () => {
       data: {
         userId: 'user-1',
         title: 'Version Test',
-        sourceType: 'text',
         config: {},
       },
     });

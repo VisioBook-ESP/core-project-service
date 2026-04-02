@@ -12,6 +12,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { createActor } from 'xstate';
 import { PrismaService } from '../common/database/prisma.service.js';
 import { NatsPublisher } from '../messaging/nats.publisher.js';
+import type { ProjectConfig } from '../common/schemas/project-config.schema.js';
 import { ProjectService } from '../project/project.service.js';
 import { UserServiceClient } from '../clients/user-service.client.js';
 import { NotificationServiceClient } from '../clients/notification-service.client.js';
@@ -172,7 +173,7 @@ export class WorkflowService {
       versionId,
       executionId: execution.id,
       userId,
-      config: (version.config as Record<string, unknown>) ?? {},
+      config: ((version.config as Record<string, unknown>) ?? {}) as ProjectConfig,
       contentText: content.text,
       sceneCount: 0,
       timestamp: new Date().toISOString(),
@@ -395,7 +396,7 @@ export class WorkflowService {
       versionId,
       executionId: execution.id,
       userId,
-      config: {},
+      config: {} as ProjectConfig,
       contentText: '',
       sceneCount: 0,
       timestamp: new Date().toISOString(),
