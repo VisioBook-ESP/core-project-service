@@ -37,28 +37,13 @@ export class ProjectService {
 
   async create(userId: string, dto: CreateProjectDto): Promise<Project> {
     const sanitizedTitle = sanitizeText(dto.title);
-    const sanitizedText = sanitizeText(dto.content.text);
-    const wordCount = sanitizedText.split(/\s+/).filter(Boolean).length;
 
-    const project = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.project.create({
-        data: {
-          userId,
-          title: sanitizedTitle,
-          sourceType: dto.sourceType,
-          config: (dto.config ?? {}) as Prisma.InputJsonValue,
-          content: {
-            create: {
-              text: sanitizedText,
-              wordCount,
-              metadata: (dto.content.metadata ?? {}) as Prisma.InputJsonValue,
-            },
-          },
-        },
-        include: { content: true },
-      });
-
-      return created;
+    const project = await this.prisma.project.create({
+      data: {
+        userId,
+        title: sanitizedTitle,
+        config: (dto.config ?? {}) as Prisma.InputJsonValue,
+      },
     });
 
     this.logger.log({ projectId: project.id, userId }, 'Project created');
