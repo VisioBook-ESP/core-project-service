@@ -5,6 +5,7 @@ function createMocks() {
   const mockPrisma = {
     project: {
       findFirst: vi.fn(),
+      findFirstOrThrow: vi.fn(),
       findMany: vi.fn(),
       count: vi.fn(),
       create: vi.fn(),
@@ -12,6 +13,7 @@ function createMocks() {
     },
     projectContent: {
       findUnique: vi.fn(),
+      create: vi.fn(),
     },
     projectVersion: {
       findFirst: vi.fn(),
@@ -29,13 +31,22 @@ function createMocks() {
     del: vi.fn().mockResolvedValue(undefined),
   };
 
+  const mockContentIngestionClient = {
+    fetchExtractedText: vi.fn().mockResolvedValue({
+      text: 'extracted text',
+      wordCount: 2,
+      metadata: {},
+    }),
+  };
+
   const service = new ProjectService(
     mockPrisma as never,
     mockNatsPublisher as never,
     mockCache as never,
+    mockContentIngestionClient as never,
   );
 
-  return { service, mockPrisma, mockNatsPublisher };
+  return { service, mockPrisma, mockNatsPublisher, mockContentIngestionClient };
 }
 
 describe('ProjectService', () => {
@@ -71,7 +82,9 @@ describe('ProjectService', () => {
     it('should create project with title and config', async () => {
       const { service, mockPrisma } = createMocks();
       const created = { id: 'p1', userId: 'u1', title: 'Test' };
+      const projectWithContent = { ...created, content: null };
       mockPrisma.project.create.mockResolvedValue(created);
+      mockPrisma.project.findFirstOrThrow.mockResolvedValue(projectWithContent);
 
       const dto = {
         title: 'Test',
@@ -80,7 +93,7 @@ describe('ProjectService', () => {
 
       const result = await service.create('u1', dto);
 
-      expect(result).toBe(created);
+      expect(result).toEqual(projectWithContent);
       expect(mockPrisma.project.create).toHaveBeenCalledWith({
         data: {
           userId: 'u1',
@@ -88,6 +101,29 @@ describe('ProjectService', () => {
           config: {},
         },
       });
+    });
+
+    it('should fetch content when fileId is provided', async () => {
+      const { service, mockPrisma, mockContentIngestionClient } = createMocks();
+      const created = { id: 'p1', userId: 'u1', title: 'Test' };
+      const projectWithContent = { ...created, content: { text: 'extracted text', wordCount: 2 } };
+      mockPrisma.project.create.mockResolvedValue(created);
+      mockPrisma.project.findFirstOrThrow.mockResolvedValue(projectWithContent);
+      mockPrisma.projectContent.create.mockResolvedValue({});
+
+      const dto = {
+        title: 'Test',
+        fileId: 'file-123',
+        config: {},
+      };
+
+      const result = await service.create('u1', dto);
+
+      expect(result).toEqual(projectWithContent);
+      expect(mockContentIngestionClient.fetchExtractedText).toHaveBeenCalledWith('file-123', {
+        userId: 'u1',
+      });
+      expect(mockPrisma.projectContent.create).toHaveBeenCalled();
     });
   });
 

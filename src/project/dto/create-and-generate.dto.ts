@@ -2,12 +2,12 @@ import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 import { ProjectConfigSchema } from '../../common/schemas/project-config.schema.js';
 
-export const CreateProjectSchema = z.object({
+export const CreateAndGenerateSchema = z.object({
   title: z.string().min(1).max(200),
   fileId: z.string().optional(),
   config: ProjectConfigSchema.optional().default({}),
 });
 
-export type CreateProjectDto = z.infer<typeof CreateProjectSchema>;
+export type CreateAndGenerateDto = z.infer<typeof CreateAndGenerateSchema>;
 
-export class CreateProjectDtoClass extends createZodDto(CreateProjectSchema) {}
+export class CreateAndGenerateDtoClass extends createZodDto(CreateAndGenerateSchema) {}

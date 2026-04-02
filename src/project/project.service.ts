@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException, ConflictException } from '@nestj
 import { PrismaService } from '../common/database/prisma.service.js';
 import { NatsPublisher } from '../messaging/nats.publisher.js';
 import { CacheService } from '../common/cache/cache.service.js';
+import { ContentIngestionClient } from '../clients/content-ingestion.client.js';
 import { sanitizeText } from '../common/utils/sanitize.js';
 import type { Project, Prisma } from '../generated/prisma/client.js';
 import type { CreateProjectDto } from './dto/create-project.dto.js';
@@ -17,6 +18,7 @@ export class ProjectService {
     private readonly prisma: PrismaService,
     private readonly natsPublisher: NatsPublisher,
     private readonly cache: CacheService,
+    private readonly contentIngestionClient: ContentIngestionClient,
   ) {}
 
   async ensureOwnership(projectId: string, userId: string): Promise<Project> {
@@ -38,12 +40,33 @@ export class ProjectService {
   async create(userId: string, dto: CreateProjectDto): Promise<Project> {
     const sanitizedTitle = sanitizeText(dto.title);
 
-    const project = await this.prisma.project.create({
-      data: {
-        userId,
-        title: sanitizedTitle,
-        config: (dto.config ?? {}) as Prisma.InputJsonValue,
-      },
+    const project = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.project.create({
+        data: {
+          userId,
+          title: sanitizedTitle,
+          config: (dto.config ?? {}) as Prisma.InputJsonValue,
+        },
+      });
+
+      if (dto.fileId) {
+        const extracted = await this.contentIngestionClient.fetchExtractedText(dto.fileId, {
+          userId,
+        });
+        await tx.projectContent.create({
+          data: {
+            projectId: created.id,
+            text: sanitizeText(extracted.text),
+            wordCount: extracted.wordCount,
+            metadata: (extracted.metadata ?? {}) as Prisma.InputJsonValue,
+          },
+        });
+      }
+
+      return tx.project.findFirstOrThrow({
+        where: { id: created.id },
+        include: { content: true },
+      });
     });
 
     this.logger.log({ projectId: project.id, userId }, 'Project created');
@@ -196,7 +219,7 @@ export class ProjectService {
     const statusFilter = status ?? null;
 
     const items = await this.prisma.$queryRaw<Project[]>`
-      SELECT p."id", p."userId", p."title", p."status", p."sourceType", p."config", p."createdAt", p."updatedAt", p."deletedAt" FROM "Project" p
+      SELECT p."id", p."userId", p."title", p."status", p."config", p."createdAt", p."updatedAt", p."deletedAt" FROM "Project" p
       LEFT JOIN "ProjectContent" pc ON pc."projectId" = p.id
       WHERE p."userId" = ${userId}
         AND p."deletedAt" IS NULL

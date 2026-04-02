@@ -34,7 +34,11 @@ export async function startPostgres(): Promise<PostgresContext> {
 
   // Apply migration SQL directly (bypasses prisma.config.ts which does not
   // expose datasource.url, making `prisma migrate deploy` fail).
-  const migrations = ['20260306085746_init', '20260402120000_make_source_type_optional'];
+  const migrations = [
+    '20260306085746_init',
+    '20260402120000_make_source_type_optional',
+    '20260402130000_remove_source_type',
+  ];
   const pool = new pg.Pool({ connectionString: connectionUrl });
   try {
     for (const migration of migrations) {

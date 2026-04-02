@@ -133,6 +133,7 @@ async function applyAdditionalMigrations(connectionUrl: string): Promise<void> {
   const migrations = [
     '20260313000000_add_fulltext_search',
     '20260402120000_make_source_type_optional',
+    '20260402130000_remove_source_type',
   ];
   const pool = new pg.Pool({ connectionString: connectionUrl });
   try {
