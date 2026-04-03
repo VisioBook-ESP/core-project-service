@@ -131,7 +131,10 @@ export { cleanDatabase };
 
 async function applyAdditionalMigrations(connectionUrl: string): Promise<void> {
   // Only migrations NOT already applied by startPostgres() (which handles init + sourceType removal)
-  const migrations = ['20260313000000_add_fulltext_search'];
+  const migrations = [
+    '20260313000000_add_fulltext_search',
+    '20260403120000_add_locations_references_pipeline',
+  ];
   const pool = new pg.Pool({ connectionString: connectionUrl });
   try {
     for (const migration of migrations) {

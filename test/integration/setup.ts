@@ -129,6 +129,7 @@ export async function cleanDatabase(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "WorkflowStep" CASCADE');
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "WorkflowExecution" CASCADE');
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "ShareLink" CASCADE');
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "Location" CASCADE');
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "Character" CASCADE');
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "Scene" CASCADE');
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "ProjectVersion" CASCADE');
