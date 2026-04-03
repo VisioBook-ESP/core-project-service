@@ -8,9 +8,10 @@ const STEP_WEIGHTS: Record<string, number> = {
   analysis: 15,
   scene_extraction: 0,
   character_extraction: 0,
-  image_generation: 40,
-  audio_generation: 20,
-  assembly: 25,
+  reference_generation: 10,
+  image_generation: 35,
+  audio_generation: 18,
+  assembly: 22,
 };
 
 export function calculateProgress(steps: StepProgress[]): number {

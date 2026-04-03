@@ -114,6 +114,7 @@ const PIPELINE_STEPS = [
   'analysis',
   'scene_extraction',
   'character_extraction',
+  'reference_generation',
   'image_generation',
   'audio_generation',
   'assembly',
