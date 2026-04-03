@@ -11,12 +11,18 @@ export const SUBJECTS = {
 
   // Project lifecycle events
   PROJECT_DELETED: 'visiobook.project.deleted',
+
+  // Media generation dispatch
+  GENERATE_REFERENCES: 'visiobook.media.generate_references',
+  IMAGE_GENERATION_STEP: 'visiobook.workflow.step.image_generation',
 } as const;
 
 // --- Inbound subjects (consumed from AI services) ---
 export const AI_SUBJECTS = {
   ANALYSIS_COMPLETED: 'visiobook.ai.analysis.completed',
   ANALYSIS_FAILED: 'visiobook.ai.analysis.failed',
+  REFERENCE_COMPLETED: 'visiobook.ai.reference.completed',
+  REFERENCE_FAILED: 'visiobook.ai.reference.failed',
   MEDIA_IMAGE_COMPLETED: 'visiobook.ai.media.image.completed',
   MEDIA_AUDIO_COMPLETED: 'visiobook.ai.media.audio.completed',
   ASSEMBLY_COMPLETED: 'visiobook.ai.assembly.completed',

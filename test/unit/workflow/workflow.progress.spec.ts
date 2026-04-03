@@ -6,6 +6,7 @@ describe('calculateProgress', () => {
     { step: 'analysis', status: 'pending', progress: 0 },
     { step: 'scene_extraction', status: 'pending', progress: 0 },
     { step: 'character_extraction', status: 'pending', progress: 0 },
+    { step: 'reference_generation', status: 'pending', progress: 0 },
     { step: 'image_generation', status: 'pending', progress: 0 },
     { step: 'audio_generation', status: 'pending', progress: 0 },
     { step: 'assembly', status: 'pending', progress: 0 },
@@ -25,6 +26,7 @@ describe('calculateProgress', () => {
       { step: 'analysis', status: 'running', progress: 50 },
       { step: 'scene_extraction', status: 'pending', progress: 0 },
       { step: 'character_extraction', status: 'pending', progress: 0 },
+      { step: 'reference_generation', status: 'pending', progress: 0 },
       { step: 'image_generation', status: 'pending', progress: 0 },
       { step: 'audio_generation', status: 'pending', progress: 0 },
       { step: 'assembly', status: 'pending', progress: 0 },
@@ -38,6 +40,7 @@ describe('calculateProgress', () => {
       { step: 'analysis', status: 'completed', progress: 100 },
       { step: 'scene_extraction', status: 'completed', progress: 100 },
       { step: 'character_extraction', status: 'completed', progress: 100 },
+      { step: 'reference_generation', status: 'pending', progress: 0 },
       { step: 'image_generation', status: 'pending', progress: 0 },
       { step: 'audio_generation', status: 'pending', progress: 0 },
       { step: 'assembly', status: 'pending', progress: 0 },
@@ -51,6 +54,7 @@ describe('calculateProgress', () => {
       { step: 'analysis', status: 'skipped', progress: 0 },
       { step: 'scene_extraction', status: 'skipped', progress: 0 },
       { step: 'character_extraction', status: 'skipped', progress: 0 },
+      { step: 'reference_generation', status: 'skipped', progress: 0 },
       { step: 'image_generation', status: 'skipped', progress: 0 },
       { step: 'audio_generation', status: 'skipped', progress: 0 },
       { step: 'assembly', status: 'skipped', progress: 0 },
@@ -63,17 +67,19 @@ describe('calculateProgress', () => {
       { step: 'analysis', status: 'completed', progress: 100 },
       { step: 'scene_extraction', status: 'completed', progress: 100 },
       { step: 'character_extraction', status: 'completed', progress: 100 },
+      { step: 'reference_generation', status: 'completed', progress: 100 },
       { step: 'image_generation', status: 'running', progress: 50 },
       { step: 'audio_generation', status: 'pending', progress: 0 },
       { step: 'assembly', status: 'pending', progress: 0 },
     ];
-    // analysis(15) + image_gen(40*0.5=20) = 35
-    expect(calculateProgress(steps)).toBe(35);
+    // analysis(15) + reference_gen(10) + image_gen(35*0.5=17.5) = 42.5 => 43
+    expect(calculateProgress(steps)).toBe(43);
   });
 
   it('should not exceed 100', () => {
     const steps: StepProgress[] = [
       { step: 'analysis', status: 'completed', progress: 100 },
+      { step: 'reference_generation', status: 'completed', progress: 100 },
       { step: 'image_generation', status: 'completed', progress: 100 },
       { step: 'audio_generation', status: 'completed', progress: 100 },
       { step: 'assembly', status: 'completed', progress: 100 },
@@ -88,11 +94,12 @@ describe('calculateProgress', () => {
   it('should handle failed steps as 0 progress', () => {
     const steps: StepProgress[] = [
       { step: 'analysis', status: 'completed', progress: 100 },
+      { step: 'reference_generation', status: 'completed', progress: 100 },
       { step: 'image_generation', status: 'failed', progress: 50 },
       { step: 'audio_generation', status: 'pending', progress: 0 },
       { step: 'assembly', status: 'pending', progress: 0 },
     ];
-    // analysis(15) + image_gen failed(0) = 15
-    expect(calculateProgress(steps)).toBe(15);
+    // analysis(15) + reference_gen(10) + image_gen failed(0) = 25
+    expect(calculateProgress(steps)).toBe(25);
   });
 });

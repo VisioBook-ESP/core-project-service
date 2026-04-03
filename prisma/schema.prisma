@@ -38,6 +38,7 @@ enum PipelineStep {
   analysis
   scene_extraction
   character_extraction
+  reference_generation
   image_generation
   audio_generation
   assembly
@@ -66,6 +67,7 @@ model Project {
   content    ProjectContent?
   scenes     Scene[]
   characters Character[]
+  locations  Location[]
   versions   ProjectVersion[]
   shareLinks ShareLink[]
   executions WorkflowExecution[]
@@ -92,25 +94,41 @@ model Scene {
   text              String
   description       String
   imagePrompt       String
+  negativePrompt    String?
   generatedImageUrl String?
   duration          Float
   sentiment         String?
+  locationId        String?
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  location Location? @relation(fields: [locationId], references: [id])
 
   @@unique([projectId, order])
   @@index([projectId])
 }
 
 model Character {
-  id          String   @id @default(uuid())
-  projectId   String
-  name        String
-  description String
-  aliases     String[]
-  traits      String[]
+  id                String   @id @default(uuid())
+  projectId         String
+  name              String
+  description       String
+  aliases           String[]
+  traits            String[]
+  referenceImageUrl String?
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model Location {
+  id                String  @id @default(uuid())
+  projectId         String
+  name              String
+  referenceImageUrl String?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scenes  Scene[]
 
   @@index([projectId])
 }
@@ -132,15 +150,16 @@ model ProjectVersion {
 }
 
 model WorkflowExecution {
-  id          String          @id @default(uuid())
-  projectId   String
-  versionId   String
-  status      ExecutionStatus @default(pending)
-  currentStep String?
-  progress    Int             @default(0)
-  startedAt   DateTime?
-  completedAt DateTime?
-  error       Json?
+  id              String          @id @default(uuid())
+  projectId       String
+  versionId       String
+  status          ExecutionStatus @default(pending)
+  currentStep     String?
+  progress        Int             @default(0)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  error           Json?
+  analysisPayload Json?
 
   project Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   version ProjectVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)

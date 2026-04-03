@@ -787,3 +787,114 @@ Wave 1 (tsconfig)
 | `src/main.ts`                         | Set up in Wave 4, rarely modified after | Only Wave 4 and minor additions (metrics interceptor in Wave 12).                                                |
 | `src/workflow/workflow.service.ts`    | Integration Dev in Waves 9, 12          | Assigned to same agent profile.                                                                                  |
 | `src/workflow/workflow.controller.ts` | Integration Dev in Waves 9, 12          | Assigned to same agent profile.                                                                                  |
+
+---
+
+## Epic: Media Generation Pipeline Wiring
+
+> Wire core-project-service to dispatch enriched analysis data to ai-media-generation-service. Add Location model, `reference_generation` pipeline step, implement actual workflow processor dispatching, and handle reference completion events.
+>
+> **Branch:** `dev`
+> **Depends on:** ai-analysis-service enriched NATS payload (see ai-analysis-service/TASKS.md)
+
+### Phase M1: Schema & Migration
+
+- [ ] **B1 — Prisma schema changes**
+  - Add `Location` model: `id, projectId, name, referenceImageUrl`
+  - Add `Character.referenceImageUrl` field
+  - Add `Scene.locationId` (FK to Location) + relation
+  - Add `Project.locations` relation
+  - Add `WorkflowExecution.analysisPayload` (Json?) — caches full analysis.completed payload
+  - Add `reference_generation` to `PipelineStep` enum
+  - File: `prisma/schema.prisma`
+
+- [ ] **B2 — Run Prisma migration**
+  - `npx prisma migrate dev --name add-locations-references-pipeline`
+  - Verify migration applies cleanly, regenerate Prisma client
+
+### Phase M2: NATS Messaging
+
+- [ ] **B3 — Update NATS subscriber for enriched analysis.completed**
+  - In `ANALYSIS_COMPLETED` handler transaction:
+    - Existing: upsert scenes (imagePrompt now enriched), delete+create characters — keep as-is
+    - New: create Location records from `locations[]` array in payload
+    - New: link scenes to locations via `locationId`
+    - New: store full payload in `WorkflowExecution.analysisPayload`
+  - File: `src/messaging/nats.subscriber.ts`
+
+- [ ] **B6 — Update NATS publisher with new outbound subjects**
+  - Add `publishGenerateReferences(payload)` → `visiobook.media.generate_references`
+  - Add `publishImageGeneration(payload)` → `visiobook.workflow.step.image_generation`
+  - Files: `src/messaging/nats.publisher.ts`, `src/messaging/subjects.ts`
+
+- [ ] **B7 — Handle reference.completed / reference.failed events**
+  - Add Zod schemas + handlers for `visiobook.ai.reference.completed` and `visiobook.ai.reference.failed`
+  - reference.completed: update Character.referenceImageUrl or Location.referenceImageUrl, track completion, trigger step completed when all done
+  - reference.failed: trigger step failed
+  - Files: `src/messaging/nats.subscriber.ts`, `src/messaging/subjects.ts`
+
+### Phase M3: Pipeline & Workflow
+
+- [ ] **B4 — Add `reference_generation` pipeline step**
+  - Add `REFERENCE_GENERATION` to `WorkflowJobName` enum
+  - Update `PIPELINE_ORDER`: insert `reference_generation` after `character_extraction`
+  - Update `STEP_TO_JOB` mapping
+  - Files: `src/workflow/workflow.types.ts`, `src/workflow/workflow.service.ts`
+
+- [ ] **B5 — Implement workflow processor dispatching**
+  - Replace stub `process()` with actual dispatching:
+    - `ANALYSIS`: No-op (already triggered by workflow.started)
+    - `REFERENCE_GENERATION`: Read analysisPayload → build + publish `visiobook.media.generate_references`
+    - `IMAGE_GENERATION`: Read scenes/characters/locations → build + publish `visiobook.workflow.step.image_generation`
+    - `AUDIO_GENERATION` / `ASSEMBLY`: Keep as placeholder
+  - File: `src/workflow/workflow.processor.ts`
+
+- [ ] **B8 — Build bookStyle from ProjectConfig**
+  - Map `ProjectConfig.style` → `bookStyle.visualStyle`
+  - `bookStyle.negativePrompt` = "" (per-scene negatives from ai-analysis-service)
+  - File: `src/workflow/workflow.processor.ts`
+
+- [ ] **B9 — Update workflow progress weights**
+  - Add weight for `reference_generation` step
+  - File: `src/workflow/workflow.progress.ts`
+
+### Phase M4: Tests
+
+- [ ] **B10 — Tests**
+  - Unit: NATS subscriber with enriched payload
+  - Unit: workflow processor dispatching
+  - Unit: reference.completed handling + completion tracking
+  - Unit: bookStyle builder
+  - Integration: pipeline step sequencing with reference_generation
+
+### Expected Outbound Payloads
+
+**`visiobook.media.generate_references`:**
+
+```json
+{
+  "projectId": "uuid",
+  "executionId": "uuid",
+  "bookStyle": { "visualStyle": "realistic", "negativePrompt": "" },
+  "characters": [{ "characterId": "uuid", "physicalDescription": "English Flux-style" }],
+  "locations": [{ "locationId": "uuid", "description": "English Flux-style" }]
+}
+```
+
+**`visiobook.workflow.step.image_generation`:**
+
+```json
+{
+  "projectId": "uuid",
+  "executionId": "uuid",
+  "bookStyle": { "visualStyle": "realistic", "negativePrompt": "" },
+  "scenes": [
+    {
+      "sceneId": "uuid",
+      "prompt": { "image": "Scene.imagePrompt value" },
+      "characterRef": { "referenceImageUrl": "Character.referenceImageUrl" },
+      "locationRef": { "referenceImageUrl": "Location.referenceImageUrl" }
+    }
+  ]
+}
+```

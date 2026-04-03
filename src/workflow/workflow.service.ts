@@ -30,6 +30,7 @@ const PIPELINE_ORDER: string[] = [
   'analysis',
   'scene_extraction',
   'character_extraction',
+  'reference_generation',
   'image_generation',
   'audio_generation',
   'assembly',
@@ -37,6 +38,7 @@ const PIPELINE_ORDER: string[] = [
 
 const STEP_TO_JOB: Record<string, WorkflowJobName> = {
   analysis: WorkflowJobName.ANALYSIS,
+  reference_generation: WorkflowJobName.REFERENCE_GENERATION,
   image_generation: WorkflowJobName.IMAGE_GENERATION,
   audio_generation: WorkflowJobName.AUDIO_GENERATION,
   assembly: WorkflowJobName.ASSEMBLY,

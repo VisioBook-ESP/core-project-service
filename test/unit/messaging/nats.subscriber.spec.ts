@@ -22,6 +22,18 @@ function createSubscriber() {
     character: {
       deleteMany: vi.fn().mockResolvedValue({}),
       create: vi.fn().mockResolvedValue({}),
+      update: vi.fn().mockResolvedValue({}),
+      count: vi.fn().mockResolvedValue(0),
+    },
+    location: {
+      deleteMany: vi.fn().mockResolvedValue({}),
+      create: vi.fn().mockResolvedValue({ id: 'loc-uuid-1' }),
+      update: vi.fn().mockResolvedValue({}),
+      count: vi.fn().mockResolvedValue(0),
+    },
+    workflowExecution: {
+      update: vi.fn().mockResolvedValue({}),
+      findFirst: vi.fn().mockResolvedValue({ projectId: UUID1 }),
     },
   };
   const subscriber = new NatsSubscriber(mockConfig as never, mockModuleRef, mockPrisma as never);
@@ -250,6 +262,118 @@ describe('NatsSubscriber', () => {
       await expect(
         callHandleMessage(subscriber, AI_SUBJECTS.ANALYSIS_COMPLETED, data),
       ).rejects.toThrow('Payload validation failed');
+    });
+
+    it('should store locations and cache analysisPayload on analysis completed', async () => {
+      const { subscriber, mockPrisma } = createSubscriber();
+      const data = {
+        projectId: UUID1,
+        versionId: UUID2,
+        executionId: UUID3,
+        userId: 'user-1',
+        scenes: [
+          {
+            order: 0,
+            text: 'S1',
+            description: 'D1',
+            imagePrompt: 'prompt',
+            negativePrompt: 'neg',
+            duration: 5,
+            locationId: 'forest',
+          },
+        ],
+        characters: [],
+        locations: [{ locationId: 'forest', name: 'Dark Forest' }],
+        correlationId: CORR,
+      };
+
+      await callHandleMessage(subscriber, AI_SUBJECTS.ANALYSIS_COMPLETED, data);
+
+      expect(mockPrisma.location.deleteMany).toHaveBeenCalledWith({ where: { projectId: UUID1 } });
+      expect(mockPrisma.location.create).toHaveBeenCalledWith({
+        data: { projectId: UUID1, name: 'Dark Forest' },
+      });
+      expect(mockPrisma.workflowExecution.update).toHaveBeenCalledWith({
+        where: { id: UUID3 },
+        data: { analysisPayload: data },
+      });
+    });
+
+    it('should route REFERENCE_COMPLETED and update character referenceImageUrl', async () => {
+      const { subscriber, mockPrisma } = createSubscriber();
+      const data = {
+        projectId: UUID1,
+        executionId: UUID3,
+        characterId: UUID4,
+        imageUrl: 'https://portrait.url',
+        correlationId: CORR,
+      };
+
+      await callHandleMessage(subscriber, AI_SUBJECTS.REFERENCE_COMPLETED, data);
+
+      expect(mockPrisma.character.update).toHaveBeenCalledWith({
+        where: { id: UUID4 },
+        data: { referenceImageUrl: 'https://portrait.url' },
+      });
+    });
+
+    it('should route REFERENCE_COMPLETED and update location referenceImageUrl', async () => {
+      const { subscriber, mockPrisma } = createSubscriber();
+      const data = {
+        projectId: UUID1,
+        executionId: UUID3,
+        locationId: UUID4,
+        imageUrl: 'https://location.url',
+        correlationId: CORR,
+      };
+
+      await callHandleMessage(subscriber, AI_SUBJECTS.REFERENCE_COMPLETED, data);
+
+      expect(mockPrisma.location.update).toHaveBeenCalledWith({
+        where: { id: UUID4 },
+        data: { referenceImageUrl: 'https://location.url' },
+      });
+    });
+
+    it('should complete reference_generation step when all refs are done', async () => {
+      const { subscriber, mockWorkflowService, mockPrisma } = createSubscriber();
+      // Both counts return 0 => all references done
+      mockPrisma.character.count.mockResolvedValue(0);
+      mockPrisma.location.count.mockResolvedValue(0);
+
+      const data = {
+        projectId: UUID1,
+        executionId: UUID3,
+        characterId: UUID4,
+        imageUrl: 'https://portrait.url',
+        correlationId: CORR,
+      };
+
+      await callHandleMessage(subscriber, AI_SUBJECTS.REFERENCE_COMPLETED, data);
+
+      expect(mockWorkflowService.handleStepCompleted).toHaveBeenCalledWith(
+        UUID3,
+        'reference_generation',
+        data,
+      );
+    });
+
+    it('should route REFERENCE_FAILED to handleStepFailed', async () => {
+      const { subscriber, mockWorkflowService } = createSubscriber();
+      const data = {
+        projectId: UUID1,
+        executionId: UUID3,
+        error: 'portrait generation failed',
+        correlationId: CORR,
+      };
+
+      await callHandleMessage(subscriber, AI_SUBJECTS.REFERENCE_FAILED, data);
+
+      expect(mockWorkflowService.handleStepFailed).toHaveBeenCalledWith(
+        UUID3,
+        'reference_generation',
+        'portrait generation failed',
+      );
     });
   });
 

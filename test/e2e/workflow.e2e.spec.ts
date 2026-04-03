@@ -43,7 +43,7 @@ describe('WorkflowController (E2E)', () => {
     expect(res.body).toHaveProperty('id');
     expect(res.body.status).toBe('running');
     expect(res.body.steps).toBeDefined();
-    expect(res.body.steps.length).toBe(6);
+    expect(res.body.steps.length).toBe(7);
   });
 
   // ---- Status ----
@@ -65,7 +65,7 @@ describe('WorkflowController (E2E)', () => {
     expect(res.status).toBe(200);
     expect(res.body.id).toBe(execution.id);
     expect(res.body.status).toBe('running');
-    expect(res.body.steps).toHaveLength(6);
+    expect(res.body.steps).toHaveLength(7);
   });
 
   // ---- Cancel ----

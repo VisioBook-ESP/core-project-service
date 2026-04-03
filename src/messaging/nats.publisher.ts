@@ -77,6 +77,29 @@ export interface ProjectDeletedPayload {
   correlationId: string;
 }
 
+export interface GenerateReferencesPayload {
+  projectId: string;
+  executionId: string;
+  bookStyle: { visualStyle: string; negativePrompt: string };
+  characters: Array<{ characterId: string; physicalDescription: string }>;
+  locations: Array<{ locationId: string; description: string }>;
+  correlationId: string;
+}
+
+export interface ImageGenerationStepPayload {
+  projectId: string;
+  executionId: string;
+  bookStyle: { visualStyle: string; negativePrompt: string };
+  scenes: Array<{
+    sceneId: string;
+    prompt: { image: string };
+    negativePrompt?: string;
+    characterRef?: { referenceImageUrl: string };
+    locationRef?: { referenceImageUrl: string };
+  }>;
+  correlationId: string;
+}
+
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 500;
 const CONNECT_MAX_RETRIES = 10;
@@ -207,5 +230,13 @@ export class NatsPublisher implements OnModuleInit, OnModuleDestroy {
 
   async publishProjectDeleted(payload: ProjectDeletedPayload): Promise<void> {
     await this.publishWithRetry(SUBJECTS.PROJECT_DELETED, payload);
+  }
+
+  async publishGenerateReferences(payload: GenerateReferencesPayload): Promise<void> {
+    await this.publishWithRetry(SUBJECTS.GENERATE_REFERENCES, payload);
+  }
+
+  async publishImageGeneration(payload: ImageGenerationStepPayload): Promise<void> {
+    await this.publishWithRetry(SUBJECTS.IMAGE_GENERATION_STEP, payload);
   }
 }
