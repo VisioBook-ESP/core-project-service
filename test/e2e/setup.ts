@@ -134,6 +134,7 @@ async function applyAdditionalMigrations(connectionUrl: string): Promise<void> {
   const migrations = [
     '20260313000000_add_fulltext_search',
     '20260403120000_add_locations_references_pipeline',
+    '20260410120000_add_dialogue_audio_fields',
   ];
   const pool = new pg.Pool({ connectionString: connectionUrl });
   try {

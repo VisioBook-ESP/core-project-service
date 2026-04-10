@@ -113,6 +113,7 @@ describe('ContentService', () => {
       expect(mockPrisma.scene.findMany).toHaveBeenCalledWith({
         where: { projectId: 'p1' },
         orderBy: { order: 'asc' },
+        include: { dialogues: { orderBy: { order: 'asc' } } },
       });
     });
 

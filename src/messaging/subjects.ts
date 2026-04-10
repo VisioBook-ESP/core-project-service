@@ -15,6 +15,7 @@ export const SUBJECTS = {
   // Media generation dispatch
   GENERATE_REFERENCES: 'visiobook.media.generate_references',
   IMAGE_GENERATION_STEP: 'visiobook.workflow.step.image_generation',
+  AUDIO_GENERATION_STEP: 'visiobook.workflow.step.audio_generation',
 } as const;
 
 // --- Inbound subjects (consumed from AI services) ---

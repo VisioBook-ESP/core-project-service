@@ -15,7 +15,7 @@ function createSubscriber() {
       await fn(mockPrisma);
     }),
     scene: {
-      upsert: vi.fn().mockResolvedValue({}),
+      upsert: vi.fn().mockResolvedValue({ id: 'scene-uuid-1' }),
       findUnique: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue({}),
     },
@@ -30,6 +30,10 @@ function createSubscriber() {
       create: vi.fn().mockResolvedValue({ id: 'loc-uuid-1' }),
       update: vi.fn().mockResolvedValue({}),
       count: vi.fn().mockResolvedValue(0),
+    },
+    dialogue: {
+      deleteMany: vi.fn().mockResolvedValue({}),
+      create: vi.fn().mockResolvedValue({}),
     },
     workflowExecution: {
       update: vi.fn().mockResolvedValue({}),

@@ -236,9 +236,59 @@ export class WorkflowProcessor extends WorkerHost implements OnModuleInit, OnMod
         break;
       }
 
-      case WorkflowJobName.AUDIO_GENERATION:
+      case WorkflowJobName.AUDIO_GENERATION: {
+        // Fetch scenes with dialogues + audio data, and characters with voice descriptions
+        const audioScenes = await this.prisma.scene.findMany({
+          where: { projectId },
+          orderBy: { order: 'asc' },
+          include: { dialogues: { orderBy: { order: 'asc' } } },
+        });
+
+        const audioCharacters = await this.prisma.character.findMany({
+          where: { projectId },
+          select: { id: true, name: true, voiceDescription: true },
+        });
+
+        const audioScenePayloads = audioScenes.map((scene) => ({
+          sceneId: scene.id,
+          order: scene.order,
+          sceneType: scene.sceneType,
+          audioPrompt: scene.audioPrompt,
+          narrationText: scene.narrationText,
+          dialogues: scene.dialogues.map((d) => ({
+            speaker: d.speaker,
+            line: d.line,
+            delivery: d.delivery,
+          })),
+        }));
+
+        const audioCharPayloads = audioCharacters.map((c) => ({
+          characterId: c.id,
+          name: c.name,
+          voiceDescription: c.voiceDescription,
+        }));
+
+        await this.natsPublisher.publishAudioGeneration({
+          projectId,
+          executionId,
+          scenes: audioScenePayloads,
+          characters: audioCharPayloads,
+          correlationId,
+        });
+
+        this.logger.log(
+          {
+            executionId,
+            sceneCount: audioScenePayloads.length,
+            characterCount: audioCharPayloads.length,
+          },
+          'Published audio_generation',
+        );
+        break;
+      }
+
       case WorkflowJobName.ASSEMBLY:
-        // TODO: implement actual dispatching for audio/assembly
+        // TODO: implement actual dispatching for assembly
         await this.natsPublisher.publishWorkflowStepCompleted({
           projectId,
           versionId,

@@ -93,6 +93,9 @@ describe('SceneResponseSchema', () => {
     generatedImageUrl: null,
     duration: 5.0,
     sentiment: null,
+    sceneType: null,
+    audioPrompt: null,
+    narrationText: null,
   };
 
   it('should accept valid scene response', () => {

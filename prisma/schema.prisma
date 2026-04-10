@@ -68,6 +68,7 @@ model Project {
   scenes     Scene[]
   characters Character[]
   locations  Location[]
+  dialogues  Dialogue[]
   versions   ProjectVersion[]
   shareLinks ShareLink[]
   executions WorkflowExecution[]
@@ -99,9 +100,13 @@ model Scene {
   duration          Float
   sentiment         String?
   locationId        String?
+  sceneType         String?
+  audioPrompt       String?
+  narrationText     String?
 
-  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  location Location? @relation(fields: [locationId], references: [id])
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  location  Location?  @relation(fields: [locationId], references: [id])
+  dialogues Dialogue[]
 
   @@unique([projectId, order])
   @@index([projectId])
@@ -115,6 +120,7 @@ model Character {
   aliases           String[]
   traits            String[]
   referenceImageUrl String?
+  voiceDescription  String?
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -130,6 +136,23 @@ model Location {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   scenes  Scene[]
 
+  @@index([projectId])
+}
+
+model Dialogue {
+  id        String  @id @default(uuid())
+  sceneId   String
+  projectId String
+  order     Int
+  speaker   String
+  line      String
+  delivery  String  @default("neutral")
+  context   String?
+
+  scene   Scene   @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([sceneId])
   @@index([projectId])
 }
 

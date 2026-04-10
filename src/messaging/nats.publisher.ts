@@ -100,6 +100,29 @@ export interface ImageGenerationStepPayload {
   correlationId: string;
 }
 
+export interface AudioGenerationStepPayload {
+  projectId: string;
+  executionId: string;
+  scenes: Array<{
+    sceneId: string;
+    order: number;
+    sceneType: string | null;
+    audioPrompt: string | null;
+    narrationText: string | null;
+    dialogues: Array<{
+      speaker: string;
+      line: string;
+      delivery: string;
+    }>;
+  }>;
+  characters: Array<{
+    characterId: string;
+    name: string;
+    voiceDescription: string | null;
+  }>;
+  correlationId: string;
+}
+
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 500;
 const CONNECT_MAX_RETRIES = 10;
@@ -238,5 +261,9 @@ export class NatsPublisher implements OnModuleInit, OnModuleDestroy {
 
   async publishImageGeneration(payload: ImageGenerationStepPayload): Promise<void> {
     await this.publishWithRetry(SUBJECTS.IMAGE_GENERATION_STEP, payload);
+  }
+
+  async publishAudioGeneration(payload: AudioGenerationStepPayload): Promise<void> {
+    await this.publishWithRetry(SUBJECTS.AUDIO_GENERATION_STEP, payload);
   }
 }
