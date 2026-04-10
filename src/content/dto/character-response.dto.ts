@@ -8,6 +8,7 @@ export const CharacterResponseSchema = z.object({
   description: z.string(),
   aliases: z.array(z.string()),
   traits: z.array(z.string()),
+  voiceDescription: z.string().nullable(),
 });
 
 export type CharacterResponseDto = z.infer<typeof CharacterResponseSchema>;

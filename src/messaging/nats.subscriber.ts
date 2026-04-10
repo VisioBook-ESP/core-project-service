@@ -267,7 +267,7 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
         // Build a locationId lookup: locationId string → DB uuid
         const locationIdMap = new Map<string, string>();
 
-        // Store scenes + characters + locations + analysisPayload atomically
+        // Store scenes + characters + locations + dialogues + analysisPayload atomically
         const locations = parsed.locations ?? [];
         await this.prisma.$transaction(async (tx) => {
           // --- Locations ---
@@ -288,6 +288,9 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
             }
           }
 
+          // --- Dialogues: delete all for idempotency before re-creating ---
+          await tx.dialogue.deleteMany({ where: { projectId: parsed.projectId } });
+
           // --- Scenes ---
           if (parsed.scenes.length > 0) {
             for (let i = 0; i < parsed.scenes.length; i++) {
@@ -295,11 +298,12 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
               const sceneLocationId = scene.locationId
                 ? (locationIdMap.get(scene.locationId as string) ?? null)
                 : null;
-              await tx.scene.upsert({
+              const sceneOrder = (scene.order as number) ?? i;
+              const upsertedScene = await tx.scene.upsert({
                 where: {
                   projectId_order: {
                     projectId: parsed.projectId,
-                    order: (scene.order as number) ?? i,
+                    order: sceneOrder,
                   },
                 },
                 update: {
@@ -310,10 +314,13 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
                   duration: (scene.duration as number) ?? 0,
                   sentiment: (scene.sentiment as string) ?? null,
                   locationId: sceneLocationId,
+                  sceneType: (scene.sceneType as string) ?? null,
+                  audioPrompt: (scene.audioPrompt as string) ?? null,
+                  narrationText: (scene.narrationText as string) ?? null,
                 },
                 create: {
                   projectId: parsed.projectId,
-                  order: (scene.order as number) ?? i,
+                  order: sceneOrder,
                   text: (scene.text as string) ?? '',
                   description: (scene.description as string) ?? '',
                   imagePrompt: (scene.imagePrompt as string) ?? '',
@@ -321,8 +328,28 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
                   duration: (scene.duration as number) ?? 0,
                   sentiment: (scene.sentiment as string) ?? null,
                   locationId: sceneLocationId,
+                  sceneType: (scene.sceneType as string) ?? null,
+                  audioPrompt: (scene.audioPrompt as string) ?? null,
+                  narrationText: (scene.narrationText as string) ?? null,
                 },
               });
+
+              // --- Dialogues for this scene ---
+              const dialogues = (scene.dialogues as Array<Record<string, unknown>>) ?? [];
+              for (let d = 0; d < dialogues.length; d++) {
+                const dlg = dialogues[d];
+                await tx.dialogue.create({
+                  data: {
+                    sceneId: upsertedScene.id,
+                    projectId: parsed.projectId,
+                    order: d,
+                    speaker: (dlg.speaker as string) ?? '',
+                    line: (dlg.line as string) ?? '',
+                    delivery: (dlg.delivery as string) ?? 'neutral',
+                    context: (dlg.context as string) ?? null,
+                  },
+                });
+              }
             }
           }
 
@@ -338,6 +365,7 @@ export class NatsSubscriber implements OnModuleInit, OnModuleDestroy {
                   description: (c.description as string) ?? '',
                   aliases: (c.aliases as string[]) ?? [],
                   traits: (c.traits as string[]) ?? [],
+                  voiceDescription: (c.voiceDescription as string) ?? null,
                 },
               });
             }
