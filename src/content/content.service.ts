@@ -3,7 +3,13 @@ import { PrismaService } from '../common/database/prisma.service.js';
 import { ProjectService } from '../project/project.service.js';
 import { CacheService } from '../common/cache/cache.service.js';
 import { sanitizeText } from '../common/utils/sanitize.js';
-import type { ProjectContent, Scene, Character, Dialogue, Prisma } from '../generated/prisma/client.js';
+import type {
+  ProjectContent,
+  Scene,
+  Character,
+  Dialogue,
+  Prisma,
+} from '../generated/prisma/client.js';
 import type { UpdateContentDto } from './dto/update-content.dto.js';
 import type { UpdateSceneDto } from './dto/update-scene.dto.js';
 
@@ -64,7 +70,10 @@ export class ContentService {
     return updated;
   }
 
-  async listScenes(projectId: string, userId: string): Promise<(Scene & { dialogues: Dialogue[] })[]> {
+  async listScenes(
+    projectId: string,
+    userId: string,
+  ): Promise<(Scene & { dialogues: Dialogue[] })[]> {
     await this.projectService.ensureOwnership(projectId, userId);
 
     return this.prisma.scene.findMany({

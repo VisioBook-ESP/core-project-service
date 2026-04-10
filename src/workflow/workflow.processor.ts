@@ -277,7 +277,11 @@ export class WorkflowProcessor extends WorkerHost implements OnModuleInit, OnMod
         });
 
         this.logger.log(
-          { executionId, sceneCount: audioScenePayloads.length, characterCount: audioCharPayloads.length },
+          {
+            executionId,
+            sceneCount: audioScenePayloads.length,
+            characterCount: audioCharPayloads.length,
+          },
           'Published audio_generation',
         );
         break;
